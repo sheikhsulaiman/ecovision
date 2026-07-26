@@ -200,8 +200,26 @@ next, rather than re-deriving it from scratch each time.
       100% Landsat 7 SLC-off in all three districts (L5 retired, L8 not
       yet delivering). Neither may be an epoch anchor, and residual gap
       fraction must be reported for both.
-- [ ] Phase 3 — preprocessing pipeline
-- [ ] Phase 4 — labels and reference sample
+- [~] Phase 3 — preprocessing primitives written and verified
+      (`src/preprocess.py`, 23-band stack, rule 6 check passing).
+      Cross-sensor harmonisation resolved empirically: locally fitted
+      coefficients replace Roy et al. on blue/red, Roy retained on green,
+      local RMA on swir1, and **NIR and SWIR2 are left untransformed** —
+      Roy's published values made both worse, and NBR is built from them.
+      TM needs no transform (measured, not assumed). See
+      `docs/phase3_harmonisation.md`. **Not done:** epoch composites, held
+      until Gate 1 and Gate 2 are signed.
+- [~] Phase 4 — machinery written, nothing drawn.
+      `src/reference_sample.py` (`--dry-run` is the default and must stay
+      so until the canopy threshold is signed) and `src/labels.py`.
+      **Pre-2000 regime: Option B decided** — supervised post-2000,
+      unsupervised before, with a 2000–2024 overlap comparison that makes
+      the pre-2000 uncertainty a measured quantity. Note E5 (Siamese)
+      therefore runs on post-2000 pairs only.
+      **Gain stratum dropped** (Hansen `gain` is 2000–2012 only), its 50
+      points moved to forest loss.
+      **Blocked:** plantation stratum needs BFD/BFIS boundaries — now on
+      the critical path, not a nice-to-have.
 - [ ] Phase 5 — splits and experiment design
 - [ ] Phase 6 — model development (Kaggle)
 - [ ] Phase 7 — change detection and maps
@@ -230,6 +248,13 @@ next, rather than re-deriving it from scratch each time.
    change, 2026-07-26. This is the question the third district exists
    to answer — without it, Bandarban is just more area for the same
    result.)*
+7. How well do unsupervised change methods substitute for supervised
+   deep learning in the years where no training labels exist? *(Added
+   2026-07-26 with the Option B two-regime decision. Answered by running
+   both regimes over the 2000–2024 overlap against the same reference
+   sample — the measured gap is what the pre-2000 estimates' uncertainty
+   rests on. If the RQ count becomes unwieldy, fold this into RQ4's
+   discussion rather than dropping the overlap comparison itself.)*
 
 ## Working style for this project
 

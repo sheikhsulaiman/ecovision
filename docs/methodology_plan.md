@@ -328,6 +328,53 @@ You need **two distinct datasets**. Conflating them invalidates your accuracy fi
 
 Option B lets you *ask a research question* about the label gap rather than apologise for it: **"How well do unsupervised change methods substitute for supervised deep learning where training labels do not exist?"** That is a publishable question.
 
+### DECIDED 2026-07-26 — Option B, the two-regime design
+
+**Chosen:** supervised deep learning from 2000 onward, unsupervised
+spectral and LandTrendr change before 2000, framed explicitly as a
+methodological comparison rather than a limitation.
+
+**Rejected — Option A (start at 2000):** throws away the 1988–1999 depth
+that Phase 2 established is available. The audit found usable imagery
+back to 1988 in all three districts; discarding twelve years because
+Hansen cannot label them is letting the label source dictate the study
+period.
+
+**Rejected — Option C (manually digitise 1990/1995 forest):** 3–4 weeks
+of labour that competes directly with the reference sample, which is
+already the binding constraint at 3,600 interpretations. Adding
+digitisation work risks the accuracy assessment to improve the training
+set — the wrong trade.
+
+#### The consequence that is not obvious
+
+**T0 = 1990 sits in the unlabelled regime.** That is fine for some
+methods and impossible for others, and the difference has to be designed
+around rather than discovered in Phase 7:
+
+| Method | Works across T0 = 1990? | Why |
+|---|---|---|
+| Random Forest, U-Net (PCC) | **Yes** | Classify each date independently, then difference. The 1990 composite is classified by a model trained on 2000+ labels — transfer in time, not in supervision |
+| NDVI differencing | **Yes** | Unsupervised, no labels needed |
+| LandTrendr | **Yes** | Unsupervised temporal segmentation over the full annual series |
+| **Siamese (E5)** | **No** | Direct bitemporal change detection needs change labels *for that pair*. None exist for 1990→2024 |
+
+So E5 runs on post-2000 pairs only. Say this in the methods chapter
+rather than letting a reader notice E5's date range differs from E3's.
+
+#### What makes it a research question rather than an excuse
+
+The two regimes **overlap from 2000 to 2024**. Run both the supervised
+and unsupervised methods over that overlap, on the same reference
+sample, and the difference between them is a measured quantity. That
+number is the honest answer to "how far can we trust the pre-2000
+figures?" — and it is reported, not assumed.
+
+Without the overlap comparison, Option B is just two methods stapled
+together. With it, the pre-2000 estimates carry a stated, empirically
+grounded uncertainty. **Budget the overlap comparison explicitly in
+Phase 7; it is the part that makes this decision defensible.**
+
 ### 4.2 Reference sample — the part that makes your results defensible
 
 **Design:** stratified random sampling.
