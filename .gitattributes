@@ -1,0 +1,29 @@
+# Normalise line endings. Both authors are on Windows now, but Kaggle and
+# Colab are Linux — without this, a file edited in one place shows as 100%
+# changed in the other and the diff becomes unreadable.
+* text=auto eol=lf
+
+# Explicit for the file types we actually author
+*.py    text eol=lf
+*.js    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.csv   text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.ipynb text eol=lf
+
+# Binary — never touch, never diff as text
+*.tif   binary
+*.tiff  binary
+*.npy   binary
+*.shp   binary
+*.shx   binary
+*.dbf   binary
+*.sbn   binary
+*.sbx   binary
+*.gpkg  binary
+*.zip   binary
+*.png   binary
+*.jpg   binary
+*.pdf   binary

@@ -7,14 +7,50 @@ them without flagging it to the user first.
 ## Project summary
 
 Undergraduate thesis: deep learning deforestation detection in
-**Gazipur** and **Sylhet** districts, Bangladesh, using Landsat
-imagery via Google Earth Engine. Two authors, one supervisor,
-department of Educational Technology and Engineering, UFTB.
+**Gazipur**, **Sylhet**, and **Bandarban** districts, Bangladesh,
+using Landsat imagery via Google Earth Engine. Two authors, one
+supervisor, department of Educational Technology and Engineering, UFTB.
 
 Full phase-by-phase methodology: `docs/methodology_plan.md`.
-Original proposal (superseded in scope — now 2 districts not 3, and
-title imagery source is corrected from "Google Earth" to "Landsat via
-Google Earth Engine"): `docs/thesis_proposal.md`.
+Original proposal (superseded — the title's imagery source is corrected
+from "Google Earth" to "Landsat via Google Earth Engine"):
+`docs/thesis_proposal.md`.
+
+### Scope change — 2026-07-26: Bandarban added
+
+Study areas went from two to three. Recorded here because the previous
+version of this file said scope had been *cut* to two districts; that is
+no longer true and the reasoning should not have to be re-derived.
+
+**What was added:** Bandarban district only (4,592 km²) — **not** the
+whole Chittagong Hill Tracts. CHT is three districts totalling 13,205
+km², which is 2.5× the original two-district study area and would have
+required 1,800 extra reference points interpreted twice by hand.
+
+**Why Bandarban of the three:** comparable in size to Sylhet so the
+three areas stay balanced; single clean polygon; most intact forest and
+the clearest jhum signal. Rangamati was rejected because Kaptai
+reservoir dominates it and reservoir inundation reads as forest loss;
+Khagrachhari because it is already the most degraded and has fragmented
+geometry.
+
+**What it buys:** a third distinct loss mechanism. Gazipur is abrupt
+permanent conversion, Sylhet is gradual degradation plus plantation
+confusion, Bandarban is **cyclical clearing and regrowth (jhum,
+shifting cultivation)**. Three mechanisms make the headline finding —
+that model choice matters more as landscape complexity rises — much
+harder to argue with than two.
+
+**What it costs:** +600 reference points (~3–4 weeks), ~1.9× total pixel
+volume. The reference sample remains the binding constraint on this
+thesis; if schedule slips, Bandarban is the first thing to cut, not the
+accuracy assessment.
+
+**New obligation it creates:** jhum breaks a plain bitemporal T0→T3
+comparison — a fallow that regrows in 5–7 years is not deforestation,
+but T0→T3 scores it as loss or as nothing depending purely on where in
+the swidden cycle the two dates land. See rule 9 below and
+`docs/forest_definition.md` §6.4.
 
 ## Compute environment: Kaggle
 
@@ -91,6 +127,17 @@ doing it.
    or example outputs into the thesis text or into code comments as
    if they were real results — mark anything illustrative as
    `# EXAMPLE — replace with real run output` and say so out loud.
+9. **Never report cyclical jhum disturbance as deforestation.**
+   Bandarban's dominant signal is shifting cultivation: clear, crop,
+   abandon, regrow, repeat on a 5–7 year cycle. A bitemporal T0→T3
+   comparison cannot tell that apart from permanent clearance — it
+   scores a fallow plot as loss or as nothing purely according to where
+   in the swidden cycle the two dates happen to fall. Any Bandarban
+   loss figure must therefore be split into **permanent conversion**
+   and **cyclical disturbance**, separated using the annual LandTrendr
+   trajectory (a pixel that recovers within the series is cyclical),
+   never by a single date pair. Headline deforestation totals count
+   permanent conversion only. This is the Bandarban analogue of rule 7.
 
 ## Repo structure
 
@@ -130,9 +177,29 @@ Update this section as phases complete — Claude Code should read it
 at the start of every session to know what's already done and what's
 next, rather than re-deriving it from scratch each time.
 
-- [x] Phase 0 — repo scaffolded, BFD request letter sent
-- [ ] Phase 1 — AOI boundaries uploaded, forest definition signed off
-- [ ] Phase 2 — scene availability audit (determines real start year)
+- [x] Phase 0 — repo scaffolded, BFD request letter sent, GitHub repo
+      created (private, `sheikhsulaiman/ecovision`)
+- [~] Phase 1 — **partially done.** AOI boundaries built by
+      `src/prepare_aoi.py`, verified against published areas, and
+      uploaded as GEE assets under `projects/ecovision-503602/assets/`.
+      Class scheme fixed. **Blocked on:** supervisor sign-off of
+      `docs/forest_definition.md` §7. Do not start Phase 4 labelling
+      until that is signed.
+- [~] Phase 2 — **audit complete, 120/120 district-years, zero failures.**
+      Results and Gate 2 decisions: `docs/phase2_audit.md`.
+      **START_YEAR = 1988** (1985–87 have zero scenes in all three
+      districts — an acquisition gap, not cloud). Epoch anchors
+      **T0 = 1990, T1 = 2000, T2 = 2010, T3 = 2024**; T0 is 1990 rather
+      than 1988 because 1988's observation depth is about half 1990's and
+      T0 is one half of every bitemporal comparison. The annual series
+      for LandTrendr still starts at 1988. Bandarban's LandTrendr
+      condition is **met** (longest gap 1 year, 1991).
+      **Blocked on:** supervisor confirmation of START_YEAR and anchors.
+      Keep `START_YEAR` a named constant regardless — do not inline 1988.
+      **Phase 3 constraint found:** the 2012 and 2013 dry seasons are
+      100% Landsat 7 SLC-off in all three districts (L5 retired, L8 not
+      yet delivering). Neither may be an epoch anchor, and residual gap
+      fraction must be reported for both.
 - [ ] Phase 3 — preprocessing pipeline
 - [ ] Phase 4 — labels and reference sample
 - [ ] Phase 5 — splits and experiment design
@@ -145,9 +212,9 @@ next, rather than re-deriving it from scratch each time.
 
 ## Research questions (current)
 
-1. How much forest cover has been lost in Gazipur and Sylhet between
-   [audited start year] and 2024, and how do loss patterns differ
-   between the two districts?
+1. How much forest cover has been lost in Gazipur, Sylhet, and
+   Bandarban between [audited start year] and 2024, and how do loss
+   patterns differ across the three districts?
 2. Which model — U-Net, Siamese Network, or Random Forest — performs
    best in each district, and does the best model differ between them?
 3. Does adding GLCM texture features resolve natural-forest vs
@@ -157,6 +224,12 @@ next, rather than re-deriving it from scratch each time.
    reference sample?
 5. Do traditional ML methods reach comparable accuracy to deep
    learning at a fraction of the compute cost?
+6. Can annual temporal segmentation (LandTrendr) separate cyclical jhum
+   disturbance from permanent forest conversion in Bandarban, where
+   bitemporal change detection cannot? *(Added with the Bandarban scope
+   change, 2026-07-26. This is the question the third district exists
+   to answer — without it, Bandarban is just more area for the same
+   result.)*
 
 ## Working style for this project
 

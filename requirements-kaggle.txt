@@ -1,0 +1,31 @@
+# EcoVision — KAGGLE environment (deep-learning training only).
+#
+# All model training runs on Kaggle notebooks, not locally. Do NOT install
+# this file on the local machine — torch alone is ~2.5 GB and nothing here
+# is used by the local pipeline.
+#
+# Kaggle setup:
+#   Accelerator : GPU T4 x2 (free tier)
+#   Internet    : ON  (required for pip install and pretrained weights)
+#   Input data  : /kaggle/input/<dataset-slug>/
+#
+# Kaggle images already ship torch, torchvision, numpy, pandas, and
+# scikit-learn. Only the packages below normally need installing:
+#
+#   !pip install -q torchgeo segmentation-models-pytorch
+#
+# Pin versions here once a run is reproducible, so a later Kaggle image
+# update does not silently change results mid-thesis.
+
+# Deep learning — usually preinstalled on Kaggle, listed for the record
+torch>=2.1
+torchvision>=0.16
+
+# Not preinstalled — must be pip-installed each session
+torchgeo>=0.5
+segmentation-models-pytorch>=0.3
+
+# Shared with the local environment; preinstalled on Kaggle
+scikit-learn>=1.3
+numpy>=1.26
+pandas>=2.1

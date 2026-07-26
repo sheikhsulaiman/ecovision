@@ -11,7 +11,8 @@ it go stale.
 | Gazipur analysis | | |
 | Model implementation (RF, U-Net, Siamese) | | |
 | Sylhet analysis | | |
-| Reference sample interpretation | Both, independently | Reconcile jointly; log both raw interpretations before merging |
+| Bandarban analysis | | Added 2026-07-26 with the scope change. Includes the LandTrendr cyclical-vs-permanent jhum split — see `forest_definition.md` §6.4 |
+| Reference sample interpretation | Both, independently | **1,800 points across 3 districts, 3,600 interpretations total, ~30–60 hrs per author.** Reconcile jointly; log both raw interpretations before merging. Start Month 3 — this is the binding constraint on the thesis |
 | Accuracy assessment, area estimation | Both | |
 | Dashboard | | |
 | Change detection method comparison | | |

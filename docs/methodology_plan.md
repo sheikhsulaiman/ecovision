@@ -80,10 +80,24 @@ Two authors need separable, defensible contributions. Recommended split:
 
 ### 1.1 Area of interest (AOI)
 
-| District | Approx. area | Pixels at 30 m | Character |
+| District | Measured area (EPSG:32646) | Pixels at 30 m | Character |
 |---|---|---|---|
-| Gazipur | ~1,806 km² | ~2.0 million | Flat; Bhawal Sal forest; industrial belt north of Dhaka |
-| Sylhet | ~3,490 km² | ~3.9 million | Hilly east; tea estates; remnant hill forest |
+| Gazipur | 1,818.7 km² | ~2.0 million | Flat; Bhawal Sal forest; industrial belt north of Dhaka |
+| Sylhet | 3,416.1 km² | ~3.8 million | Hilly east; tea estates; remnant hill forest |
+| Bandarban | 4,592.1 km² | ~5.1 million | Steep hills; mixed evergreen forest; shifting cultivation (jhum) |
+| **Total** | **9,826.9 km²** | **~10.9 million** | |
+
+Areas measured from the geoBoundaries BGD ADM2 (2020 vintage, CC BY 3.0
+IGO — cite it) by `src/prepare_aoi.py`, not taken from literature. They
+differ from published BBS figures by +0.7%, −2.1%, and +2.5%
+respectively; this is boundary vintage, not error.
+
+**Bandarban was added on 2026-07-26**, replacing the earlier
+two-district scope. It is one Chittagong Hill Tracts district, not all
+three — the full CHT is 13,205 km², 2.5× the original study area.
+Rationale, cost, and the obligations it creates are recorded in
+`CLAUDE.md` under "Scope change" and in `docs/forest_definition.md`
+§6.4.
 
 Source the ADM2 boundary from HDX (BBS-derived) or geoBoundaries. Upload as a GEE asset. Reproject nothing — work natively in the Landsat CRS (UTM 46N, EPSG:32646) and only reproject for display.
 
@@ -182,7 +196,18 @@ Don't analyse all 40 years at equal depth. Choose **epoch anchors** for the main
 
 Bitemporal change detection runs on T0→T3 and each consecutive pair. LandTrendr runs on the full annual series.
 
-**Gate 2:** Audit table exported for both districts. Start year fixed and justified in one written paragraph. Epoch anchors chosen.
+**Gate 2:** Audit table exported for all three districts. Start year fixed and justified in one written paragraph. Epoch anchors chosen.
+
+**Additional Bandarban condition on Gate 2.** The audit must also confirm
+that Bandarban has enough *annual* coverage to run LandTrendr, not just
+enough for the epoch anchors. The permanent-vs-cyclical jhum split
+(`docs/forest_definition.md` §6.4) depends entirely on the annual
+trajectory; epoch composites alone cannot produce it. Expect Bandarban to
+be the worst of the three districts here — it is the most cloud-affected
+and the most terrain-shadowed. **If annual coverage is insufficient,
+Bandarban cannot report a deforestation figure at all**, because
+bitemporal loss there is uninterpretable. Decide that at Gate 2, not in
+Month 9.
 
 ---
 
@@ -307,16 +332,35 @@ Option B lets you *ask a research question* about the label gap rather than apol
 
 **Design:** stratified random sampling.
 
-| Stratum | Target n (per district) |
-|---|---|
-| Stable non-forest | 150 |
-| Stable natural forest | 150 |
-| Forest loss | 150 |
-| Plantation | 100 |
-| Gain / regrowth | 50 |
-| **Total** | **600** |
+| Stratum | Gazipur | Sylhet | Bandarban |
+|---|---|---|---|
+| Stable non-forest | 150 | 150 | 125 |
+| Stable natural forest | 150 | 150 | 125 |
+| Forest loss — **permanent** | 150 | 150 | 150 |
+| **Cyclical jhum disturbance** | — | — | **150** |
+| Plantation | 100 | 100 | 50 |
+| Gain / regrowth | 50 | 50 | — |
+| **Total** | **600** | **600** | **600** |
 
 Deliberately over-sample the rare change classes. A proportional sample would give you ~15 loss points and useless confidence intervals.
+
+**Bandarban's strata differ deliberately, and the total is held at 600.**
+The cyclical-disturbance stratum is not optional — without it the
+permanent-vs-cyclical split from §6.4 of the forest definition is
+asserted rather than measured, and that split is the entire reason the
+district was added. Its 150 points are funded by cutting the two stable
+strata to 125 (Bandarban is overwhelmingly forested, so stable forest is
+cheap to characterise), by halving the plantation stratum (teak and
+rubber are present but far less extensive than Sylhet's tea), and by
+dropping the separate gain/regrowth stratum, which in Bandarban is
+subsumed by cyclical disturbance.
+
+**Total interpretation workload: 1,800 points, each interpreted
+independently by both authors = 3,600 interpretations.** At 1–2 minutes
+per point that is roughly 30–60 hours *per author*. This is the binding
+constraint on the whole thesis and the reason CHT was limited to one
+district. Start in Month 3. If it slips, cut Bandarban — never cut the
+sample.
 
 **Interpretation protocol:**
 1. Generate points in GEE, export as CSV with lat/lon.
