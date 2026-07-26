@@ -130,23 +130,15 @@ MAX_SAMPLING_FRACTION = 0.05
 # as covering 1988-2024, and Chapter 6 must say so.
 GAIN_BAND_PERIOD = "2000-2012"
 
-# Interpretation is not split evenly. Author A interprets every point;
-# Author B interprets a stratified subsample, and Cohen's kappa is computed
-# on that overlap (docs/methodology_plan.md 4.2).
+# Both authors interpret EVERY point, independently, and Cohen's kappa is
+# computed on the whole sample (docs/methodology_plan.md 4.2).
 #
-# This replaces the original both-authors-interpret-everything design after
-# the division of labour changed on 2026-07-26. The point of the overlap is
-# that kappa remains computable and the thesis statement remains true: a
-# claim of independent dual interpretation cannot be made if it did not
-# happen (rule 8), and kappa is precisely the number an examiner asks about.
-#
-# The subsample is stratified proportionally rather than drawn at random
-# across the whole sample. A simple random subset would be dominated by
-# whichever stratum is largest, and agreement on easy classes says nothing
-# about agreement on the change classes the thesis rests on.
-PRIMARY_AUTHOR = "author_a"
-OVERLAP_AUTHOR = "author_b"
-OVERLAP_PER_DISTRICT = 150
+# A partial-overlap variant was briefly adopted on 2026-07-26 when the
+# division of labour looked like it was changing, then reverted the same
+# day. Full dual interpretation is the stronger design: agreement is
+# measured on all 1,800 points rather than a quarter of them, so kappa
+# carries no caveat about which subset it was computed on.
+AUTHORS = ["author_a", "author_b"]
 
 INTERPRETATION_COLUMNS = [
     "point_id", "district", "stratum", "lon", "lat",
@@ -154,19 +146,6 @@ INTERPRETATION_COLUMNS = [
 ]
 
 
-def overlap_subsample(frame: pd.DataFrame, n: int, seed: int) -> pd.DataFrame:
-    """Stratified subsample for the second interpreter.
-
-    Proportional allocation across strata, so agreement is measured on the
-    change classes and not just on whichever stratum happens to be largest.
-    """
-    shares = frame["stratum"].value_counts(normalize=True)
-    picked = []
-    for stratum, share in shares.items():
-        take = max(1, round(n * share))
-        rows = frame[frame["stratum"] == stratum]
-        picked.append(rows.sample(n=min(take, len(rows)), random_state=seed))
-    return pd.concat(picked).sort_values("point_id").reset_index(drop=True)
 
 
 def build_strata(aoi: ee.Geometry, district: str) -> tuple[ee.Image, list[str]]:
@@ -409,27 +388,22 @@ def main() -> int:
         master = OUT_DIR / f"reference_sample_{district}.csv"
         frame.to_csv(master, index=False)
 
-        # Author A interprets everything; Author B interprets the overlap
-        # subsample. Both files are blank and logged separately — they are
-        # never merged in place (docs/README.md rule 3), because the
-        # disagreements are the evidence, not noise to be tidied away.
-        frame.to_csv(
-            OUT_DIR / f"interpretation_{district}_{PRIMARY_AUTHOR}.csv", index=False
-        )
-        overlap = overlap_subsample(frame, OVERLAP_PER_DISTRICT, SEED)
-        overlap.to_csv(
-            OUT_DIR / f"interpretation_{district}_{OVERLAP_AUTHOR}.csv", index=False
-        )
+        # One blank copy per author, each interpreting every point. Logged
+        # separately and never merged in place (docs/README.md rule 3) —
+        # the disagreements are the evidence, not noise to be tidied away.
+        for author in AUTHORS:
+            frame.to_csv(
+                OUT_DIR / f"interpretation_{district}_{author}.csv", index=False
+            )
 
         manifest["districts"][district] = {
             "n": len(frame),
             "by_stratum": frame["stratum"].value_counts().to_dict(),
-            "overlap_n": len(overlap),
-            "overlap_point_ids": overlap["point_id"].tolist(),
+            "interpreters": AUTHORS,
             "stratum_areas": summary[district]["areas"],
         }
         print(f"{district}: {len(frame)} points -> {master.relative_to(REPO)}")
-        print(f"{'':<11} {len(overlap)} of them also to {OVERLAP_AUTHOR} for kappa")
+        print(f"{'':<11} blank copies for {', '.join(AUTHORS)}")
 
     with (OUT_DIR / "sample_manifest.json").open("w", encoding="utf-8") as fh:
         json.dump(manifest, fh, indent=2)

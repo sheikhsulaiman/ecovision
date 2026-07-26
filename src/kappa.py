@@ -1,8 +1,14 @@
-"""Inter-interpreter agreement on the reference-sample overlap.
+"""Inter-interpreter agreement on the reference sample.
 
 Gate 4 requires Cohen's kappa between the two interpreters, reported in
-the thesis. Author A interprets every point; Author B interprets a
-stratified subsample; kappa is computed on that overlap.
+the thesis. Both authors interpret every point independently — 600 per
+district, 1,800 each — and kappa is computed on the full sample.
+
+The comparison is a join on point_id, so it works on whatever both
+authors have completed so far. Running it mid-way is useful: a kappa
+that is already low after 200 points means the class definitions are
+ambiguous at the boundaries, and it is far cheaper to fix that then than
+after 1,800.
 
     python src/kappa.py
     python src/kappa.py --district sylhet --field class_t3
@@ -41,7 +47,9 @@ REF_DIR = REPO / "data" / "reference"
 TABLE_DIR = REPO / "outputs" / "tables"
 
 DISTRICTS = ["gazipur", "sylhet", "bandarban"]
-PRIMARY, OVERLAP = "author_a", "author_b"
+# Must match AUTHORS in src/reference_sample.py — these are the filenames
+# that script writes.
+AUTHOR_A, AUTHOR_B = "author_a", "author_b"
 
 GATE_4_THRESHOLD = 0.75
 
@@ -101,15 +109,15 @@ def per_class_agreement(a: pd.Series, b: pd.Series) -> pd.DataFrame:
 def load_pair(district: str, field: str) -> pd.DataFrame | None:
     paths = {
         author: REF_DIR / f"interpretation_{district}_{author}.csv"
-        for author in (PRIMARY, OVERLAP)
+        for author in (AUTHOR_A, AUTHOR_B)
     }
     missing = [str(p.relative_to(REPO)) for p in paths.values() if not p.exists()]
     if missing:
         print(f"  {district}: missing {', '.join(missing)}")
         return None
 
-    a = pd.read_csv(paths[PRIMARY])
-    b = pd.read_csv(paths[OVERLAP])
+    a = pd.read_csv(paths[AUTHOR_A])
+    b = pd.read_csv(paths[AUTHOR_B])
     merged = a.merge(b, on="point_id", suffixes=("_a", "_b"))
     merged = merged[
         merged[f"{field}_a"].notna() & merged[f"{field}_b"].notna()
@@ -119,7 +127,7 @@ def load_pair(district: str, field: str) -> pd.DataFrame | None:
         & (merged[f"{field}_b"].astype(str).str.strip() != "")
     ]
     if merged.empty:
-        print(f"  {district}: no overlapping interpretations for {field} yet")
+        print(f"  {district}: no completed interpretations for {field} yet")
         return None
     return merged
 
@@ -146,7 +154,7 @@ def main() -> int:
 
         verdict = "PASS" if kappa >= GATE_4_THRESHOLD else "BELOW GATE 4"
         print(f"=== {district} ===")
-        print(f"  overlap points      {n}")
+        print(f"  compared points     {n}")
         print(f"  raw agreement       {raw:.3f}")
         print(f"  Cohen's kappa       {kappa:.3f} +/- {1.96 * se:.3f}   {verdict}")
         print(per_class_agreement(a, b).to_string(index=False))

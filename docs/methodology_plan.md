@@ -430,42 +430,32 @@ constraint on the whole thesis and the reason CHT was limited to one
 district. Start in Month 3. If it slips, cut Bandarban — never cut the
 sample.
 
-**Interpretation protocol** *(revised 2026-07-26 — see the note below)*:
+**Interpretation protocol:**
 1. Generate points with `src/reference_sample.py --draw`.
-2. **Author A interprets all 600 points per district.** Author B
-   independently interprets a **stratified subsample of 150 per
-   district** (450 total). Both use Google Earth Pro historical imagery —
-   the one legitimate use of Google Earth in this thesis — plus the
-   Landsat time-series chart at that point.
+2. **Each author interprets all 600 points per district independently** —
+   1,800 each, 3,600 interpretations total. Use Google Earth Pro
+   historical imagery (the one legitimate use of Google Earth in this
+   thesis) plus the Landsat time-series chart at that point.
 3. Record: class at T0, class at T3, confidence (high/medium/low), notes.
-4. Compute Cohen's κ on the overlap with `src/kappa.py`. **Report this
-   number in the thesis** — it is evidence of rigour and almost no
-   undergraduate thesis has it.
+4. Compute Cohen's κ with `src/kappa.py`. **Report this number in the
+   thesis** — it is evidence of rigour and almost no undergraduate thesis
+   has it.
 5. Reconcile disagreements jointly; if unresolvable, flag as uncertain
    and exclude with justification. **Log what changed and why** — the
    reconciliation record is part of the audit trail, and silently
    overwriting disagreements destroys the evidence that the sample was
    independently interpreted at all.
 
-**Why the split is uneven.** The division of labour changed on
-2026-07-26: Author A now carries the analysis, Author B the written
-report. The original design had both authors interpret everything, which
-is no longer what will happen.
+**Neither author sees the other's file before κ is computed.** The
+independence is the entire content of the number; comparing notes first
+turns κ into a measure of how well you negotiated, not how reproducible
+the interpretation is.
 
-The overlap subsample exists so that κ remains computable and the thesis
-statement remains **true**. A claim of independent dual interpretation
-cannot be made if it did not occur (rule 8), and κ is exactly the number
-an examiner asks about. 150 points per district is a few hours of work
-rather than weeks, and it preserves the Gate 4 deliverable intact.
-
-The subsample is **stratified proportionally, not drawn at random** from
-the whole sample. A simple random subset would be dominated by whichever
-stratum is largest, and agreement on easy classes says nothing about
-agreement on the change classes the thesis rests on.
-
-**What is honestly lost:** with one interpreter covering 450 of the 1,800
-points, agreement is measured on a quarter of the sample rather than all
-of it. State the overlap fraction in Chapter 6 alongside κ.
+**Timing.** 3,600 interpretations at 1–2 minutes each is roughly 30–60
+hours per author. This is the binding constraint on the whole thesis and
+the single most-skipped step in the risk register. Hard-schedule it in
+Month 3, in parallel with Phase 3. It cannot be compressed at the end,
+and no amount of compute substitutes for it.
 
 **Timing:** start this in Month 3. It takes 3–4 weeks of real work and cannot be compressed at the end.
 
