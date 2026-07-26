@@ -1,0 +1,35 @@
+# Raw and derived data — never commit. The `/*` form (not `/`) is required
+# so the .gitkeep negation below works: git cannot re-include a file whose
+# parent DIRECTORY is excluded. Keeping the .gitkeep means a fresh clone
+# still has the folder, so scripts writing here don't hit FileNotFoundError.
+data/raw/*
+!data/raw/.gitkeep
+data/patches/*
+!data/patches/.gitkeep
+*.tif
+*.tiff
+*.npy
+
+# data/reference/ is deliberately NOT ignored. The reference-sample
+# interpretation CSVs are produced by hand, by both authors, over weeks —
+# no script can regenerate them. They are the only non-derived data in this
+# repo and the sole basis of every accuracy figure. Commit them.
+
+# Rendered maps are derived AND large (GeoTIFF, often >100 MB — GitHub's
+# per-file hard limit). Regenerate from src/.
+outputs/maps/*
+!outputs/maps/.gitkeep
+
+# outputs/figures/ and outputs/tables/ ARE tracked, deliberately. They are
+# derived, but small, and versioning them gives an audit trail of how every
+# reported number moved as the pipeline changed. See CLAUDE.md.
+
+# Environment
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+venv/
+.env
+
+# OS
+.DS_Store
