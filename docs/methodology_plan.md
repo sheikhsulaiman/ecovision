@@ -336,11 +336,32 @@ Option B lets you *ask a research question* about the label gap rather than apol
 |---|---|---|---|
 | Stable non-forest | 150 | 150 | 125 |
 | Stable natural forest | 150 | 150 | 125 |
-| Forest loss — **permanent** | 150 | 150 | 150 |
+| Forest loss — **permanent** | 200 | 200 | 150 |
 | **Cyclical jhum disturbance** | — | — | **150** |
 | Plantation | 100 | 100 | 50 |
-| Gain / regrowth | 50 | 50 | — |
+| ~~Gain / regrowth~~ | — | — | — |
 | **Total** | **600** | **600** | **600** |
+
+**The gain/regrowth stratum was dropped on 2026-07-26** and its 50 points
+moved to forest loss. Hansen's `gain` band covers **2000–2012 only** — it
+was never extended annually the way `lossyear` was. Measured over our
+AOIs that leaves 624 gain pixels in Gazipur and 451 in Sylhet, so 50
+points would have been 8% and 11% of the entire stratum, breaking the
+large-population assumption behind the variance formulae in
+`src/area_estimation.py`. The stratum could not honestly have been
+described as covering 1988–2024 in any case.
+
+Regrowth is instead reported from the LandTrendr annual series, which
+spans the whole study period. The freed points went to forest loss rather
+than being spread evenly: loss is the change class, F1 on it is the
+headline metric, and the width of its interval is the number an examiner
+will press on.
+
+**The plantation stratum is blocked** pending tea/rubber estate
+boundaries from BFD/BFIS. No spectral proxy was substituted —
+distinguishing plantation from natural forest spectrally is the problem
+this thesis exists to solve, so using a proxy to define the stratum would
+beg the question. This puts the BFD request on the critical path.
 
 Deliberately over-sample the rare change classes. A proportional sample would give you ~15 loss points and useless confidence intervals.
 
