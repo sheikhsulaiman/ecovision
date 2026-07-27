@@ -1,0 +1,9 @@
+# EcoVision authors: GitHub login | full name | email
+#
+# Used by .githooks/pre-commit and scripts/set-identity.sh so that commits
+# made on a shared machine are attributed to whoever is actually working.
+#
+# Add a line here if a third person ever contributes. Lines starting with
+# # are ignored.
+sheikhsulaiman|Sheikh Sulaiman Sony|sheikhsulaimansony@outlook.com
+Borno0007|Jalal Uddin Mohammad Akbar|jalalborno29@outlook.com

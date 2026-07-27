@@ -19,6 +19,31 @@ This repo holds all code for the EcoVision deforestation thesis
    Keep both authors' independent interpretations in
    `data/reference/` before reconciliation; don't merge in place.
 
+## Shared machine: set your identity before committing
+
+Both authors work on the same PC, so git would otherwise attribute every
+commit to whoever configured it last. At the start of your session:
+
+```bash
+gh auth switch --user <your-github-login>
+sh scripts/set-identity.sh
+```
+
+`set-identity.sh` reads the active GitHub account and sets this repo's
+local git identity from `.githooks/authors.txt`. Your global git config is
+left alone.
+
+A `pre-commit` hook blocks any commit where the git identity and the
+active GitHub account disagree, so forgetting is caught rather than
+silently misattributed. After cloning, enable it once:
+
+```bash
+git config --local core.hooksPath .githooks
+```
+
+If you are offline or `gh` is unavailable the hook warns and lets the
+commit through — a failing network should not stop you saving work.
+
 ## Setup
 
 ```bash

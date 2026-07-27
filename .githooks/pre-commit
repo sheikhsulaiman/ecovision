@@ -1,0 +1,63 @@
+#!/bin/sh
+# Block commits whose git identity does not match the active GitHub account.
+#
+# Both authors work on the same machine. Without this, whoever configured
+# git last owns every commit both of them make, and the contribution record
+# — which is what an examiner reads when asking who did what — becomes
+# fiction. Discipline does not survive a deadline; this does.
+#
+# Installed via: git config --local core.hooksPath .githooks
+# Bypass in an emergency with --no-verify, but fix the identity afterwards.
+
+set -e
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+AUTHORS="$REPO_ROOT/.githooks/authors.txt"
+
+name=$(git config user.name || true)
+email=$(git config user.email || true)
+
+if [ -z "$name" ] || [ -z "$email" ]; then
+  echo "pre-commit: no git identity set."
+  echo "  Run: sh scripts/set-identity.sh"
+  exit 1
+fi
+
+# Offline or gh missing: warn, do not block. A failing network should not
+# stop someone committing work.
+if ! command -v gh >/dev/null 2>&1; then
+  echo "pre-commit: gh not found, skipping identity check."
+  echo "  Committing as: $name <$email>"
+  exit 0
+fi
+
+active=$(gh api user --jq .login 2>/dev/null || true)
+if [ -z "$active" ]; then
+  echo "pre-commit: could not reach GitHub, skipping identity check."
+  echo "  Committing as: $name <$email>"
+  exit 0
+fi
+
+expected=$(grep -v '^#' "$AUTHORS" | grep -i "^$active|" || true)
+if [ -z "$expected" ]; then
+  echo "pre-commit: GitHub account '$active' is not listed in"
+  echo "  .githooks/authors.txt. Add it there if this is a real contributor."
+  exit 1
+fi
+
+expected_name=$(echo "$expected" | cut -d'|' -f2)
+expected_email=$(echo "$expected" | cut -d'|' -f3)
+
+if [ "$name" != "$expected_name" ] || [ "$email" != "$expected_email" ]; then
+  echo "pre-commit: identity does not match the active GitHub account."
+  echo
+  echo "  active GitHub account : $active"
+  echo "  expected identity     : $expected_name <$expected_email>"
+  echo "  configured identity   : $name <$email>"
+  echo
+  echo "  This commit would be attributed to the wrong author."
+  echo "  Fix with: sh scripts/set-identity.sh"
+  exit 1
+fi
+
+exit 0
