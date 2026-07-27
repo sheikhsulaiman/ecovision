@@ -158,7 +158,7 @@ docs/           Methodology plan, proposal, division of labour, this file
 **Nothing derived is committed to git.** If a script can regenerate a
 file, that file belongs in `.gitignore`, not in a commit.
 
-Two deliberate exceptions, both recorded in `.gitignore`:
+Three deliberate exceptions, all recorded in `.gitignore`:
 
 - `data/reference/*.csv` **is** committed. It is hand-interpreted by
   both authors over weeks and no script can regenerate it — it is the
@@ -170,6 +170,12 @@ Two deliberate exceptions, both recorded in `.gitignore`:
   an examiner asks whether a result shifted after a bug fix.
   `outputs/maps/` stays ignored (GeoTIFFs, frequently over GitHub's
   100 MB per-file limit).
+- `data/splits/*.geojson` **is** committed. The block assignment defines
+  what "test set" means for every experiment. It is seed-reproducible but
+  also depends on Hansen loss counts, so a Hansen version bump would
+  silently reassign blocks and two models trained a month apart would be
+  scored on different test sets while looking comparable. Regenerate
+  deliberately with `src/splits.py --write`, never incidentally.
 
 ## Current phase status
 

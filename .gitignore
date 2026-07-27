@@ -24,6 +24,14 @@ outputs/maps/*
 # derived, but small, and versioning them gives an audit trail of how every
 # reported number moved as the pipeline changed. See CLAUDE.md.
 
+# data/splits/ is tracked for a stronger reason than size. The block
+# assignment defines what "test set" means for EVERY experiment. It is
+# reproducible from a fixed seed, but it also depends on Hansen loss counts
+# — so a Hansen version bump would silently reassign blocks, and two models
+# trained a month apart would be evaluated on different test sets while
+# appearing comparable. Freezing the assignment in git is what stops that.
+# Regenerate deliberately with src/splits.py --write, never incidentally.
+
 # Environment
 __pycache__/
 *.pyc
