@@ -463,11 +463,20 @@ and no amount of compute substitutes for it.
 
 | Parameter | Value | Rationale |
 |---|---|---|
-| Patch size | 256 × 256 px | 7.7 × 7.7 km at 30 m; fits GPU memory with ~20 bands |
+| Patch size | **128 × 128 px** | 3.84 km at 30 m. **Revised from 256 on 2026-07-27** — see below |
 | Overlap | 32 px | Reduces edge artifacts on reassembly |
-| Bands | ~20 (Phase 3.6) | |
+| Bands | 23 (Phase 3.6) | |
 | Format | `.npy` float32, or TFRecord for direct GEE→TF | |
 | Normalisation | Per-band z-score using **training-set statistics only** | Computing stats over all data leaks test information |
+
+**Patch size revised to 128 × 128 on 2026-07-27.** Measured against the
+real blocks from `src/splits.py`, a 256 px patch is 7.68 km and a block
+is 10 km, so patches cannot tile with overlap without crossing the block
+boundary — which breaks the spatial disjointness the blocks exist to
+provide. It also yields only ~236 patches across all three districts,
+roughly 165 for training, which is not enough to fine-tune a ResNet-34
+encoder. 128 px gives ~943 patches and tiles 6× inside a block. Full
+reasoning and the rejected alternatives: `docs/phase5_experiment_matrix.md` §1.
 
 **Gate 4:** Reference sample interpreted by both authors, κ computed and ≥0.75. Training patches extracted, class balance tabulated.
 
@@ -496,14 +505,25 @@ A second, stronger evaluation: **train on Gazipur, test on Sylhet, and vice vers
 
 Keep it small and complete. Six runs, not sixty.
 
-| ID | Model | Input | Purpose |
-|---|---|---|---|
-| E1 | Random Forest | Per-pixel spectral + indices + texture | Baseline |
-| E2 | Random Forest | + terrain | Does terrain help? |
-| E3 | U-Net (ResNet-34 encoder, ImageNet pretrained) | Full stack, single date | Segmentation |
-| E4 | U-Net | Full stack, no texture bands | **Ablation: does texture solve the tea problem?** |
-| E5 | Siamese U-Net (FC-Siam-diff) | Bitemporal pairs | Direct change detection |
-| E6 | E3 or E5, cross-district | Best model, transferred | Generalisation |
+| ID | Model | Input | Epochs | Purpose |
+|---|---|---|---|---|
+| E1 | Random Forest | Per-pixel spectral + indices + texture | any labelled year | Baseline — **done** |
+| E2 | Random Forest | + terrain | any labelled year | Does terrain help? — **done** |
+| E3 | U-Net (ResNet-34 encoder, ImageNet pretrained) | Full 23-band stack, single date | 2000, 2010, 2024 | Segmentation |
+| E4 | U-Net | Full stack, no texture bands | 2000, 2010, 2024 | **Ablation: does texture solve the tea problem?** |
+| E5 | Siamese U-Net (FC-Siam-diff) | Bitemporal pairs | **post-2000 pairs only** | Direct change detection |
+| E6 | E3 or E5, cross-district | Best model, transferred | as parent | Generalisation |
+
+**Frozen 2026-07-27.** Full matrix with per-district class-imbalance
+strategy, E1/E2 results, and the pre-agreed cut list:
+`docs/phase5_experiment_matrix.md`. Adding an experiment after this point
+needs a written reason — scope creep back to eight models is in the risk
+register.
+
+**E5 is post-2000 only** because direct bitemporal change detection needs
+change labels for that specific pair, and none exist before Hansen's 2000
+baseline (Option B, §4.1). E3 can classify the 1990 composite with
+weights trained on later labels; E5 cannot.
 
 Each experiment runs with **3 random seeds**; report mean ± standard deviation. Single-run numbers are not evidence.
 

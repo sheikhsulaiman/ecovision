@@ -226,8 +226,24 @@ next, rather than re-deriving it from scratch each time.
       points moved to forest loss.
       **Blocked:** plantation stratum needs BFD/BFIS boundaries — now on
       the critical path, not a nice-to-have.
-- [ ] Phase 5 — splits and experiment design
-- [ ] Phase 6 — model development (Kaggle)
+- [x] Phase 5 — **done.** Spatially disjoint 10 km block splits written
+      and verified (`src/splits.py`, `data/splits/*.geojson`, committed so
+      the test set cannot drift). Balanced on forest loss as well as area,
+      because loss is 0.22% of pixels in Gazipur and Sylhet and an
+      area-only split leaves the test set with no positives.
+      **Patch size revised 256 → 128 px** — 256 does not tile inside a
+      10 km block and yields only ~165 training patches. Experiment matrix
+      frozen. See `docs/phase5_experiment_matrix.md`.
+- [~] Phase 6 — **E1/E2 done** (`src/models/rf.py`, 3 seeds). Terrain
+      helps in Gazipur (+0.017 macro F1) and Sylhet (+0.008), within seed
+      noise in Bandarban. All RF numbers are against Hansen training
+      labels, not the reference sample — pipeline checks, not results.
+      E3/E4/E5/E6 blocked on patch extraction, which is blocked on the
+      canopy threshold sign-off.
+      **Class imbalance differs by two orders of magnitude across
+      districts** (0.22% loss in Gazipur/Sylhet vs 24.3% in Bandarban), so
+      patch sampling is weighted in the first two and unweighted in
+      Bandarban. Test splits are never weighted.
 - [ ] Phase 7 — change detection and maps
 - [ ] Phase 8 — accuracy assessment and area estimation
 - [ ] Phase 9 — analysis
