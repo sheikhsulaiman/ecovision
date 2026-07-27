@@ -6,6 +6,7 @@ data/raw/*
 !data/raw/.gitkeep
 data/patches/*
 !data/patches/.gitkeep
+data/pixels/
 *.tif
 *.tiff
 *.npy
