@@ -260,6 +260,25 @@ plantation from natural forest spectrally is the thesis question; using
 spectral similarity to define the stratum would assume the answer. A
 *location* proxy from an independent published source does not have that
 problem and is acceptable.
+
+#### Sources checked and ruled out
+
+Recorded so nobody repeats the search. **Manual digitising is the path**,
+via `gee/05_tea_digitising.js`.
+
+| Source | Result |
+|---|---|
+| **OpenStreetMap** (Overpass, whole district) | 13 name matches: tea stalls, a factory office, a road, university buildings. **One** estate polygon. Unusable |
+| **Siddik et al. (2025)** | Tables 1–4 are cited in the text but hold no data in the available proof; only district centroids appear anywhere in the file. Valuable for scale and upazila location, **not** geometry |
+| **GEE catalog** (`WRI/SDPT/V1`, `V2`) | Not present |
+| **GFW Data API** (`gfw_planted_forests`) | Exists, 7 versions, but requires a registered API key |
+| **ESA WorldCover, Dynamic World** | Available, but neither separates tea from other tree cover |
+| **WRI SDPT v1.3** (3.16 GB global geodatabase) | **Bangladesh is absent.** 43 country layers; India, Sri Lanka, Myanmar, Nepal and Pakistan are present, `bgd_plant` is not. The Indian polygons within 100 km of Sylhet are pine (20,952), sal (354) and teak (116) — no tea |
+
+The last row cost a 3.16 GB download to establish. It is a clean negative
+and worth stating in Chapter 4: **no global or open plantation dataset
+maps Bangladesh's tea estates**, which is itself part of why the
+plantation confusion persists in regional forest statistics.
 not guess the row's contents in the meantime.
 
 ---

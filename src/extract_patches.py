@@ -61,7 +61,15 @@ SPLITS = ["train", "val", "test"]
 
 # A training patch that is 100% one class teaches nothing and costs a full
 # forward pass. Applied only where the classes are wildly imbalanced.
-MIN_MINORITY_FRACTION = 0.02
+#
+# Relaxed from 0.02 to 0.005 on 2026-08-03. At 0.02 the filter discarded
+# two-thirds of Gazipur's training patches (123 planned, 40 kept), leaving
+# too few to fine-tune a ResNet-34 encoder on. Gazipur is 91% non-forest,
+# so most of its patches are near-single-class by construction — and a
+# patch that is 98% non-forest still teaches the non-forest class and,
+# more usefully, the forest boundary. The remaining imbalance is carried
+# by the Dice + BCE loss, which is what it is for.
+MIN_MINORITY_FRACTION = 0.005
 FILTERED_DISTRICTS = {"gazipur", "sylhet"}
 
 # Label value for pixels with no data. Blocks are clipped to the district,
@@ -166,6 +174,13 @@ def run_split(district: str, year: int, split: str, dry_run: bool, limit: int | 
         for i, (x, y) in enumerate(origins):
             if limit and kept >= limit:
                 break
+            # Resumable: a run interrupted partway should not refetch what
+            # it already has. Each patch is a separate network round trip,
+            # so this is the difference between minutes and an hour.
+            target = out_dir / f"{block.block_id}_{i:02d}.npz"
+            if not dry_run and target.exists():
+                kept += 1
+                continue
             arr = fetch_patch(combined, x, y, band_names)
             if arr is None:
                 failed += 1
