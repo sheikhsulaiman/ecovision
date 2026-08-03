@@ -67,7 +67,8 @@ published figures.
 |---|---|---|
 | FAO FRA | ≥10% canopy, ≥0.5 ha, trees ≥5 m, excluding land predominantly under agricultural or urban use | Ours is stricter on canopy cover (30% vs 10%) and names the excluded plantation types explicitly rather than relying on the "predominantly agricultural use" clause |
 | Hansen GFC | `treecover2000` is continuous canopy percentage; forest is whatever threshold the user applies. Includes plantations. | We threshold at 30% to match ours. **Hansen counts tea and rubber as tree cover — we do not.** This is the expected source of divergence in Phase 8.3 cross-validation, and it is a result to explain, not an error to hide. |
-| BFD / national reporting | To be confirmed once BFD documentation is received | Fill this row in before submission. Do not guess it. |
+| BFD / national reporting | Reported at the 2026-07-27 supervisor meeting as **consistent with the definition in §1** | No material divergence identified. **Still to obtain: the written BFD definition itself**, so this row can quote it rather than paraphrase a meeting. |
+| Siddik et al. (2025), *J. Agroforestry and Environment* 18(2):102–115 | Tea estates mapped from imagery; **18 estates in Sylhet district**, none in Gazipur or Bandarban | Independent evidence for the scale of the plantation problem. Sylhet holds >10,000 ha under tea against 28,489 ha of Hansen ≥30% "forest" — so a large share of what Hansen calls forest in Sylhet is plausibly tea. Confirms the plantation exclusion in §1 is load-bearing, not precautionary. |
 
 ---
 
@@ -121,7 +122,10 @@ recorded here for supervisor confirmation at sign-off. They are not
 silent defaults — each was an explicit choice with a rejected
 alternative, and each is to be stated in Chapter 3.
 
-### 6.1 Canopy threshold: 30%, with a stated caveat — DECIDED
+### 6.1 Canopy threshold: 30%, with a stated caveat — CONFIRMED BY SUPERVISOR
+
+**Confirmed at the supervisor meeting, 2026-07-27.** The threshold is
+fixed at 30% and the reference-sample strata may be drawn against it.
 
 **Chosen:** 30% canopy cover, as in §1.
 
@@ -219,11 +223,43 @@ recovered will be counted as permanent loss. State this, and state the
 direction of the resulting bias — it **overestimates** permanent
 conversion in Bandarban.
 
-### 6.5 BFD operational definition — STILL OPEN
+### 6.5 Plantation boundaries — STILL BLOCKED (definition resolved)
 
-Blocked on the BFD/BFIS data request (Phase 0.1). When the documentation
-arrives, fill the BFD row in §3. If BFD's definition differs from ours,
-record the difference there — do not silently adopt either one, and do
+Two separate things were conflated under "BFD" and they have now come
+apart:
+
+**Resolved — the definition.** BFD's operational forest definition was
+reported at the 2026-07-27 meeting as consistent with §1. §3 records
+this. Still worth obtaining the written definition so that row quotes a
+document rather than a meeting.
+
+**Still blocked — the geometry.** The plantation class (class 2) and the
+plantation reference stratum both need *polygons*, and none are in hand.
+
+Siddik et al. (2025) was reviewed as a candidate source. It establishes
+that Sylhet holds 18 tea estates concentrated in Gowainghat, Kanaighat,
+Sylhet Sadar, Jaintiapur and Companiganj, with some in Balaganj and
+Fenchuganj, and that neither Gazipur nor Bandarban has tea estates. But
+its Tables 1–4, which the text says carry per-estate coordinates, contain
+no data in the available proof — only district centroids appear anywhere
+in the file. **It is a citable source for scale and location context, not
+a source of geometry.**
+
+Consequences that follow from it, and which stand regardless:
+
+- **The tea problem is Sylhet-only.** Gazipur needs no tea stratum.
+  Bandarban has teak and rubber, which that paper does not cover and
+  which need their own source.
+- **18 estates is tractable to digitise by hand**, unlike the 152
+  nationally. This is the realistic fallback if BFD/BFIS geometry never
+  arrives, and it is now a decision with a known cost rather than an
+  open-ended one.
+
+Do not substitute a spectral proxy for the plantation stratum. Separating
+plantation from natural forest spectrally is the thesis question; using
+spectral similarity to define the stratum would assume the answer. A
+*location* proxy from an independent published source does not have that
+problem and is acceptable.
 not guess the row's contents in the meantime.
 
 ---

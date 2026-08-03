@@ -1,0 +1,112 @@
+{
+  "canopy_threshold": 30,
+  "seed": 20260726,
+  "hansen": "UMD/hansen/global_forest_change_2025_v1_13",
+  "start_year": 1988,
+  "end_year": 2024,
+  "districts": {
+    "gazipur": {
+      "n": 500,
+      "by_stratum": {
+        "forest_loss": 200,
+        "stable_non_forest": 150,
+        "stable_forest": 150
+      },
+      "interpreters": [
+        "author_a",
+        "author_b"
+      ],
+      "stratum_areas": {
+        "stable_non_forest": {
+          "code": 0,
+          "pixels": 2034422.0392156858,
+          "area_ha": 166391.78304505462,
+          "weight": 0.9255206192417582
+        },
+        "stable_forest": {
+          "code": 1,
+          "pixels": 158810.08235294122,
+          "area_ha": 12987.590045416093,
+          "weight": 0.07224084123214675
+        },
+        "forest_loss": {
+          "code": 2,
+          "pixels": 4924.450980392156,
+          "area_ha": 402.4487141830863,
+          "weight": 0.0022385395260950047
+        }
+      }
+    },
+    "sylhet": {
+      "n": 500,
+      "by_stratum": {
+        "forest_loss": 200,
+        "stable_non_forest": 150,
+        "stable_forest": 150
+      },
+      "interpreters": [
+        "author_a",
+        "author_b"
+      ],
+      "stratum_areas": {
+        "stable_non_forest": {
+          "code": 0,
+          "pixels": 3652116.615686272,
+          "area_ha": 296807.5918592007,
+          "weight": 0.9103428151078942
+        },
+        "stable_forest": {
+          "code": 1,
+          "pixels": 350815.1607843137,
+          "area_ha": 28494.705121377283,
+          "weight": 0.08739651810580808
+        },
+        "forest_loss": {
+          "code": 2,
+          "pixels": 9110.917647058825,
+          "area_ha": 737.0663597290758,
+          "weight": 0.002260666786297687
+        }
+      }
+    },
+    "bandarban": {
+      "n": 550,
+      "by_stratum": {
+        "forest_loss": 150,
+        "cyclical": 150,
+        "stable_non_forest": 125,
+        "stable_forest": 125
+      },
+      "interpreters": [
+        "author_a",
+        "author_b"
+      ],
+      "stratum_areas": {
+        "stable_non_forest": {
+          "code": 0,
+          "pixels": 847480.549019608,
+          "area_ha": 70447.88178105705,
+          "weight": 0.1533444190367981
+        },
+        "stable_forest": {
+          "code": 1,
+          "pixels": 3334980.0980392154,
+          "area_ha": 277300.27922391833,
+          "weight": 0.6036015440249567
+        },
+        "forest_loss": {
+          "code": 2,
+          "pixels": 1328434.6784313726,
+          "area_ha": 110504.33331785229,
+          "weight": 0.24053558979017028
+        },
+        "cyclical": {
+          "code": 5,
+          "pixels": 13983.835294117649,
+          "area_ha": 1156.9985270663153,
+          "weight": 0.0025184471480748207
+        }
+      }
+    }
+  }
+}
