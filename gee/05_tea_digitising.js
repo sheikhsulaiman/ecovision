@@ -9,6 +9,27 @@
 // narrows where they are: 18,467 ha of canopy inside seven upazilas, about
 // 5% of the district. That is what makes this a few hours rather than a week.
 //
+// YOU DO NOT NEED TO SEARCH. There is a named worklist.
+//
+// data/vector/sylhet_tea_estates_worklist.csv lists 19 estates with their
+// addresses. Search each name in Google Earth Pro or the GEE search box,
+// go straight to it, and draw. That turns "scan 185 km2 of canopy" into
+// "visit 19 known places", which is the difference between a week and an
+// afternoon.
+//
+//   Sylhet Sadar  Burjan, Alibahar, Daddnagar, Dalia, Khadim,
+//                 Lackatoorah, Malnicherra, Star
+//   Gowainghat    Fatehpur, Habibnagar, Jafflong, Khan
+//   Jaintiapur    Afifanagar, Lallakhal, Sreepore
+//   Fenchuganj    Dallucherra, Monipur, Moomincherra
+//   Kanaighat     Loobacherra
+//
+// Tick each off in the worklist CSV as you go, with a confidence value.
+// Two independent counts exist -- Siddik et al. (2025) say 18, the estate
+// directory lists 19 -- so finding 18 or 19 is the expected outcome. If
+// you find substantially fewer, estates are being missed; substantially
+// more, natural forest is probably being included.
+//
 // HOW TO USE
 //   1. Run this script. Three layers appear: search zone, canopy, imagery.
 //   2. Use the Geometry Imports tool to create a FeatureCollection named
