@@ -1,0 +1,26 @@
+review_order,candidate_id,upazila,expected_in_upazila,area_ha,is_tea,estate_name,notes
+1,TEA-C000,Sylhet Sadar,8,245.7,yes,Malnicherra,EXAMPLE ROW - clear planted rows and service tracks; boundary good
+2,TEA-C001,Sylhet Sadar,8,231.8,yes,Lackatoorah,EXAMPLE ROW - rows visible; candidate extends ~200m too far north into scrub
+3,TEA-C002,Sylhet Sadar,8,213.4,yes,Khadim,EXAMPLE ROW - clear tea
+4,TEA-C003,Sylhet Sadar,8,180.4,no,,EXAMPLE ROW - chaotic canopy on steep ground; natural forest
+5,TEA-C004,Sylhet Sadar,8,158.8,yes,Burjan,EXAMPLE ROW - tea in south half only; north half is village trees
+6,TEA-C005,Sylhet Sadar,8,143.0,no,,EXAMPLE ROW - homestead vegetation; houses and ponds visible under canopy
+7,TEA-C006,Sylhet Sadar,8,124.1,unsure,,EXAMPLE ROW - possible young tea or replanting; imagery cloudy
+8,TEA-C007,Sylhet Sadar,8,123.5,yes,Star,EXAMPLE ROW - clear tea
+9,TEA-C008,Sylhet Sadar,8,122.4,yes,Alibahar,EXAMPLE ROW - clear tea
+10,TEA-C009,Sylhet Sadar,8,105.5,no,,EXAMPLE ROW - orchard; irregular tree spacing not tea rows
+11,TEA-C010,Gowainghat,4,1269.0,no,,EXAMPLE ROW - large natural hill forest block
+12,TEA-C011,Gowainghat,4,524.5,yes,Jafflong,EXAMPLE ROW - tea; candidate merges two estates, see C012
+13,TEA-C012,Gowainghat,4,476.0,yes,Fatehpur,EXAMPLE ROW - tea; shares boundary with C011
+14,TEA-C013,Gowainghat,4,338.3,yes,Habibnagar,EXAMPLE ROW - clear tea
+15,TEA-C014,Gowainghat,4,285.7,no,,EXAMPLE ROW - natural forest
+16,TEA-C015,Gowainghat,4,282.1,yes,Khan,EXAMPLE ROW - clear tea
+17,TEA-C016,Gowainghat,4,257.8,no,,EXAMPLE ROW - natural forest
+28,TEA-C027,Jaintiapur,3,976.6,no,,EXAMPLE ROW - natural forest, Lallakhal area but not the estate itself
+29,TEA-C028,Fenchuganj,3,459.5,yes,Monipur,EXAMPLE ROW - clear tea
+30,TEA-C029,Jaintiapur,3,281.0,yes,Sreepore,EXAMPLE ROW - clear tea
+31,TEA-C030,Fenchuganj,3,166.9,yes,Dallucherra,EXAMPLE ROW - clear tea
+32,TEA-C031,Jaintiapur,3,109.0,yes,Afifanagar,EXAMPLE ROW - clear tea
+33,TEA-C032,Kanaighat,1,1342.9,no,,EXAMPLE ROW - natural forest
+36,TEA-C035,Kanaighat,1,444.0,yes,Loobacherra,EXAMPLE ROW - clear tea; only estate expected in this upazila
+49,TEA-C048,Balaganj,0,1560.2,no,,EXAMPLE ROW - natural forest / wetland edge

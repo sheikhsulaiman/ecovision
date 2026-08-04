@@ -101,7 +101,10 @@ def candidate_blocks(zone: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     frame = gpd.GeoDataFrame.from_features(info["features"], crs="EPSG:4326")
     if frame.empty:
         return frame
-    frame["area_ha"] = frame.to_crs(pp.NATIVE_CRS).area / 1e4
+    # Rounded: these boundaries come from a 60 m vectorisation, so quoting
+    # area to 13 decimal places implies a precision that does not exist and
+    # makes the review CSV hard to read.
+    frame["area_ha"] = (frame.to_crs(pp.NATIVE_CRS).area / 1e4).round(1)
     return frame[(frame["area_ha"] >= MIN_AREA_HA) & (frame["area_ha"] <= MAX_AREA_HA)].copy()
 
 
