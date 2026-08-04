@@ -64,7 +64,31 @@ VECTOR_SCALE = 60
 # than the 19 estates you would otherwise just look up by name, which
 # defeats the point. 100 ha is still well below the smallest estate.
 MIN_AREA_HA = 100
-MAX_AREA_HA = 3000
+
+# NO UPPER CAP, and that was a real bug. A 3,000 ha cap silently dropped a
+# 14,053 ha block centred at 24.9485N 91.9321E — the north-east Sylhet
+# canopy that contains Malnicherra, Lackatoorah and Khadim, merged with
+# surrounding forest. The single most important candidate was excluded for
+# being too big.
+#
+# Adjacent estates and nearby forest merge into one blob at 60 m, so large
+# blocks are EXPECTED. They get reviewed and split, not discarded.
+MAX_AREA_HA = None
+
+# Homestead vegetation is the dominant false positive: village tree cover
+# is real tree cover, so WorldCover classes it as such. Measured over
+# TEA-C000, which a reviewer rejected on sight, against a known tea block:
+#
+#              tree   built-up  cropland  water
+#   known tea  94.7%      0.2%      4.1%   1.0%
+#   TEA-C000   52.5%     24.6%     15.1%   6.1%
+#
+# Built-up fraction separates them cleanly. This is a SETTLEMENT filter,
+# not a tea filter — it says nothing about tea versus natural forest, which
+# is the distinction that must stay with a human (RQ3).
+MAX_BUILTUP_FRACTION = 0.08
+MIN_TREE_FRACTION = 0.70
+BUILTUP_CLASS = 50
 
 # Which estates the worklist expects in each upazila, so a reviewer knows
 # what they are looking for before they open the imagery.
@@ -105,7 +129,43 @@ def candidate_blocks(zone: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     # area to 13 decimal places implies a precision that does not exist and
     # makes the review CSV hard to read.
     frame["area_ha"] = (frame.to_crs(pp.NATIVE_CRS).area / 1e4).round(1)
-    return frame[(frame["area_ha"] >= MIN_AREA_HA) & (frame["area_ha"] <= MAX_AREA_HA)].copy()
+    frame = frame[frame["area_ha"] >= MIN_AREA_HA].copy()
+    if MAX_AREA_HA is not None:
+        frame = frame[frame["area_ha"] <= MAX_AREA_HA].copy()
+    return frame
+
+
+def land_cover_mix(frame: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Built-up and tree fractions per candidate, to drop settlements."""
+    wc = ee.ImageCollection(WORLDCOVER).first().select("Map")
+    features = [
+        ee.Feature(ee.Geometry(geom.__geo_interface__), {"idx": int(i)})
+        for i, geom in zip(frame.index, frame.geometry)
+    ]
+
+    built = wc.eq(BUILTUP_CLASS).rename("built")
+    tree = wc.eq(TREE_CLASS).rename("tree")
+    stats = (
+        built.addBands(tree)
+        .reduceRegions(
+            collection=ee.FeatureCollection(features),
+            reducer=ee.Reducer.mean(),
+            scale=30,
+            tileScale=4,
+        )
+        .getInfo()
+    )
+    lookup = {
+        f["properties"]["idx"]: (
+            f["properties"].get("built") or 0.0,
+            f["properties"].get("tree") or 0.0,
+        )
+        for f in stats["features"]
+    }
+    frame = frame.copy()
+    frame["built_frac"] = [round(lookup.get(i, (0, 0))[0], 3) for i in frame.index]
+    frame["tree_frac"] = [round(lookup.get(i, (0, 0))[1], 3) for i in frame.index]
+    return frame
 
 
 def write_kml(frame: gpd.GeoDataFrame, path: Path) -> None:
@@ -164,13 +224,22 @@ def main() -> int:
     zone = gpd.read_file(zone_path)
     print(f"search zone: {len(zone)} upazila parts, "
           f"{zone.to_crs(pp.NATIVE_CRS).area.sum() / 1e6:,.0f} km2")
-    print(f"proposing canopy blocks between {args.min_area:,.0f} and "
-          f"{MAX_AREA_HA:,.0f} ha\n")
+    cap = f"up to {MAX_AREA_HA:,.0f} ha" if MAX_AREA_HA else "no upper cap"
+    print(f"proposing canopy blocks from {args.min_area:,.0f} ha, {cap}")
 
     blocks = candidate_blocks(zone)
     if blocks.empty:
         print("no candidates found")
         return 1
+
+    before = len(blocks)
+    blocks = land_cover_mix(blocks)
+    blocks = blocks[
+        (blocks["built_frac"] <= MAX_BUILTUP_FRACTION)
+        & (blocks["tree_frac"] >= MIN_TREE_FRACTION)
+    ].copy()
+    print(f"  {before} canopy blocks -> {len(blocks)} after removing settlements "
+          f"(built-up > {MAX_BUILTUP_FRACTION:.0%} or tree < {MIN_TREE_FRACTION:.0%})")
 
     # Label each block with the upazila it mostly falls in, so a reviewer
     # knows which estate names to expect before opening the imagery.
@@ -209,7 +278,7 @@ def main() -> int:
         expect = len(EXPECTED.get(upazila, []))
         print(f"{upazila:<16}{len(group):>12}{group['area_ha'].sum():>14,.0f}   {expect}")
 
-    keep = ["review_order", "candidate_id", "upazila", "expected_in_upazila", "area_ha", "is_tea", "estate_name", "notes", "geometry"]
+    keep = ["review_order", "candidate_id", "upazila", "expected_in_upazila", "area_ha", "built_frac", "tree_frac", "is_tea", "estate_name", "notes", "geometry"]
     blocks[keep].to_file(VECTOR_DIR / "sylhet_tea_candidates.geojson", driver="GeoJSON")
     write_kml(blocks, VECTOR_DIR / "sylhet_tea_candidates.kml")
     blocks[[c for c in keep if c != "geometry"]].to_csv(
