@@ -90,6 +90,25 @@ MAX_BUILTUP_FRACTION = 0.08
 MIN_TREE_FRACTION = 0.70
 BUILTUP_CLASS = 50
 
+# Morphological opening, in metres. Village tree cover connects to real
+# canopy through thin corridors, so reduceToVectors merges whole
+# settlements onto an estate — a reviewer looking at TEA-C000 in Earth Pro
+# saw the polygon's ragged fingers running through Dhopagul, Mahishkher,
+# Khadim Nagar and Atgaon.
+#
+# Eroding by 150 m severs anything narrower than ~300 m, then dilating
+# back restores the cores at roughly their original size. Estates are over
+# a kilometre across and survive; village corridors do not. Multipart
+# results are then split, which is what breaks the 14,053 ha blob into
+# reviewable pieces.
+OPENING_M = 150
+
+# Protected areas are natural forest by designation, so they cannot be
+# tea. Khadimnagar National Park and Tilagar Eco Park both sit inside the
+# largest candidate; subtracting them removes known non-tea rather than
+# leaving a reviewer to work it out from the imagery.
+WDPA = "WCMC/WDPA/current/polygons"
+
 # Which estates the worklist expects in each upazila, so a reviewer knows
 # what they are looking for before they open the imagery.
 EXPECTED = {
@@ -132,7 +151,40 @@ def candidate_blocks(zone: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     frame = frame[frame["area_ha"] >= MIN_AREA_HA].copy()
     if MAX_AREA_HA is not None:
         frame = frame[frame["area_ha"] <= MAX_AREA_HA].copy()
-    return frame
+
+    frame = subtract_protected(frame, region)
+    frame = split_by_opening(frame)
+
+    frame["area_ha"] = (frame.to_crs(pp.NATIVE_CRS).area / 1e4).round(1)
+    return frame[frame["area_ha"] >= MIN_AREA_HA].copy()
+
+
+def subtract_protected(frame: gpd.GeoDataFrame, region: ee.Geometry) -> gpd.GeoDataFrame:
+    """Remove gazetted protected areas — natural forest by designation."""
+    try:
+        parks = ee.FeatureCollection(WDPA).filterBounds(region).getInfo()
+    except Exception as exc:
+        print(f"  (protected-area subtraction skipped: {str(exc)[:60]})")
+        return frame
+    if not parks.get("features"):
+        return frame
+    pa = gpd.GeoDataFrame.from_features(parks["features"], crs="EPSG:4326")
+    names = ", ".join(sorted({str(n) for n in pa.get("NAME", [])})[:4])
+    print(f"  subtracting {len(pa)} protected areas: {names}")
+    return frame.overlay(pa[["geometry"]], how="difference")
+
+
+def split_by_opening(frame: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Sever thin village corridors, then split what falls apart.
+
+    Erode and dilate in a projected CRS — buffering in degrees would
+    shrink differently by latitude and is meaningless in metres.
+    """
+    metric = frame.to_crs(pp.NATIVE_CRS)
+    opened = metric.buffer(-OPENING_M).buffer(OPENING_M)
+    out = gpd.GeoDataFrame(geometry=opened, crs=pp.NATIVE_CRS)
+    out = out[~out.geometry.is_empty & out.geometry.notna()]
+    return out.explode(index_parts=False).reset_index(drop=True).to_crs("EPSG:4326")
 
 
 def land_cover_mix(frame: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
