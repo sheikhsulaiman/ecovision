@@ -57,3 +57,7 @@ outputs/interpret/
 # The Kaggle upload bundle — ~840 MB of the same patches already ignored
 # above, rezipped. Rebuild with src/package_kaggle.py.
 outputs/kaggle/
+
+# Model weights — ~90 MB each and reproducible from the patches plus a
+# fixed seed. The metrics they produce are what gets committed.
+outputs/checkpoints/

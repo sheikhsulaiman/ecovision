@@ -87,6 +87,8 @@ DISTRICTS = ["gazipur", "sylhet", "bandarban"]
 # Sylhet, where the tea-versus-forest confusion lives.
 JOBS = [("E3", d) for d in DISTRICTS] + [("E4", "sylhet")]
 
+CHECKPOINTS = WORK / "checkpoints"
+
 for experiment, district in JOBS:
     print(f"\n{'=' * 60}\n{experiment}  {district}\n{'=' * 60}", flush=True)
     subprocess.run([
@@ -96,6 +98,27 @@ for experiment, district in JOBS:
         "--year", str(YEAR),
         "--seeds", str(SEEDS),
         "--epochs", str(EPOCHS),
+        "--patch-root", str(WORK / "patches"),
+        "--stats", str(WORK / f"tables/patch_norm_stats_{YEAR}.csv"),
+        "--checkpoint-dir", str(CHECKPOINTS),
+    ], check=False)
+
+# %%
+# --- cell 4b: E7 stacked ensemble ---------------------------------------
+# Runs after E3 because it stacks a TRAINED U-Net onto a Random Forest; it
+# does not train one. The meta-learner is fit on the validation split —
+# see the module docstring for why train and test are both wrong there.
+for district in DISTRICTS:
+    checkpoint = CHECKPOINTS / f"unet_E3_{district}_{YEAR}_s0.pt"
+    if not checkpoint.exists():
+        print(f"  skipping E7 {district}: no checkpoint (did E3 fail?)")
+        continue
+    print(f"\n{'=' * 60}\nE7  {district}\n{'=' * 60}", flush=True)
+    subprocess.run([
+        sys.executable, str(WORK / "src/models/ensemble.py"),
+        "--district", district,
+        "--checkpoint", str(checkpoint),
+        "--year", str(YEAR),
         "--patch-root", str(WORK / "patches"),
         "--stats", str(WORK / f"tables/patch_norm_stats_{YEAR}.csv"),
     ], check=False)

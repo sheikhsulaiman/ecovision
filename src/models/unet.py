@@ -265,7 +265,8 @@ def evaluate(model, loader, device, n_classes: int) -> dict:
 
 
 def train(district: str, experiment: str, seed: int, year: int,
-          patch_root: Path, stats_path: Path, epochs: int, device: str) -> dict:
+          patch_root: Path, stats_path: Path, epochs: int, device: str,
+          checkpoint_dir: Path | None = None) -> dict:
     torch.manual_seed(seed)
     np.random.seed(seed)
 
@@ -316,6 +317,21 @@ def train(district: str, experiment: str, seed: int, year: int,
 
     if best_state is not None:
         model.load_state_dict(best_state)
+
+    # E7 needs the trained weights back on this machine, and a Kaggle
+    # session's disk does not survive its own restart — so the checkpoint
+    # is written into the results bundle rather than left in memory. The
+    # band list travels with it: an ensemble that fed E4's 23 bands into
+    # weights trained on E3's 20 would fail loudly, and one that fed them
+    # in a different ORDER would not fail at all.
+    if checkpoint_dir is not None:
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        path = checkpoint_dir / f"unet_{experiment}_{district}_{year}_s{seed}.pt"
+        torch.save({"state_dict": model.state_dict(), "keep_names": keep_names,
+                    "experiment": experiment, "district": district,
+                    "year": year, "seed": seed, "n_classes": n_classes}, path)
+        print(f"      checkpoint -> {path.name}")
+
     test = evaluate(model, loaders["test"], device, n_classes)
     test.update({"district": district, "experiment": experiment, "seed": seed,
                  "year": year, "n_bands": len(keep), "best_val_miou": best})
@@ -399,6 +415,8 @@ def main() -> int:
     parser.add_argument("--epochs", type=int, default=EPOCHS)
     parser.add_argument("--patch-root", type=Path, default=PATCH_ROOT)
     parser.add_argument("--stats", type=Path, default=STATS_PATH)
+    parser.add_argument("--checkpoint-dir", type=Path,
+                        help="save best weights here — required for E7 (src/models/ensemble.py)")
     args = parser.parse_args()
 
     if args.smoke_test:
@@ -417,7 +435,8 @@ def main() -> int:
         for seed in seeds:
             print(f"  {district} / {args.experiment} / seed {seed}")
             results.append(train(district, args.experiment, seed, args.year,
-                                 args.patch_root, args.stats, args.epochs, device))
+                                 args.patch_root, args.stats, args.epochs, device,
+                                 args.checkpoint_dir))
 
     import pandas as pd
 
