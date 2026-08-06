@@ -74,7 +74,7 @@ PLANTATION_DISTRICTS = {"sylhet"}
 
 PLANTATION_PARTIAL = (
     "Class 2 covers the hand-digitised Sylhet tea estates only, and those "
-    "are incomplete: about 2,900 ha are drawn against a district total of "
+    "are incomplete: about 1,300 ha are drawn against a district total of "
     ">10,000 ha reported by Siddik et al. (2025). Tea outside the drawn "
     "polygons still falls into class 1, so the Sylhet confusion is reduced "
     "rather than eliminated. Gazipur and Bandarban have no plantation "

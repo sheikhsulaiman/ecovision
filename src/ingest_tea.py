@@ -43,7 +43,11 @@ OUT = VECTOR_DIR / "sylhet_tea_estates.geojson"
 # Khadimnagar National Park; WDPA maps only the gazetted 700 ha core, and
 # the surrounding reserve forest is larger and unmapped, so part of tea10
 # may be natural forest rather than tea.
-PROVISIONAL = {"tea10"}
+# tea10 was flagged provisional after its 1,906 ha extent was found to
+# span the Khadimnagar reserve forest, which WDPA does not map beyond the
+# gazetted 700 ha core. Visual check at 24.953N 91.945E confirmed it, and
+# it was trimmed to 321 ha — an 83% cut. Nothing is provisional now.
+PROVISIONAL: set[str] = set()
 
 # Sanity bounds. Sylhet estates run from about 100 ha to 650 ha; anything
 # far outside that is either a plot-level fragment or has swallowed
