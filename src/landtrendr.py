@@ -173,15 +173,39 @@ def classify(array: ee.Image) -> ee.Image:
             .addBands(regained.rename("recovered_fraction")))
 
 
-def areas(image: ee.Image, aoi: ee.Geometry, scale: int) -> dict:
-    grouped = (
+def _grouped_area(image: ee.Image, aoi: ee.Geometry, scale: int):
+    return (
         ee.Image.pixelArea()
         .addBands(image.select("class"))
         .reduceRegion(
             reducer=ee.Reducer.sum().group(groupField=1, groupName="class"),
             geometry=aoi, scale=scale, maxPixels=int(1e10), bestEffort=True)
-        .getInfo()
     )
+
+
+def areas_batch(image: ee.Image, aoi: ee.Geometry, district: str) -> None:
+    """Submit the area tabulation as a batch task instead of computing it live.
+
+    At 30 m the interactive reduction is 37 dry-season composites over
+    4,592 km² in one synchronous request, and Earth Engine refuses it with
+    "Computed image is too large". Batch tasks have far higher limits and
+    survive this machine being switched off, which an interactive call
+    does not.
+    """
+    feature = ee.Feature(None, _grouped_area(image, aoi, pp.NATIVE_SCALE))
+    task = ee.batch.Export.table.toDrive(
+        collection=ee.FeatureCollection([feature]),
+        description=f"landtrendr_areas_{district}",
+        folder="ecovision",
+        fileFormat="CSV",
+    )
+    task.start()
+    print(f"Area tabulation submitted as a batch task: "
+          f"landtrendr_areas_{district} -> Drive/ecovision")
+
+
+def areas(image: ee.Image, aoi: ee.Geometry, scale: int) -> dict:
+    grouped = _grouped_area(image, aoi, scale).getInfo()
     by_code = {int(g["class"]): float(g["sum"]) for g in grouped.get("groups", [])}
     total = sum(by_code.values()) or 1.0
     return {CLASSES[c]: {"area_ha": a / 1e4, "share": a / total}
@@ -226,7 +250,16 @@ def main() -> int:
         print(f"Export started: landtrendr_{args.district} -> Drive/ecovision")
 
     print("computing areas — this is 37 composites and it is slow\n")
-    table = areas(classified, aoi, args.scale)
+    try:
+        table = areas(classified, aoi, args.scale)
+    except ee.ee_exception.EEException as exc:
+        print(f"  interactive tabulation failed: {str(exc)[:70]}")
+        print("  falling back to a batch task — at 30 m this is expected.\n")
+        areas_batch(classified, aoi, args.district)
+        print("Check Drive/ecovision when both tasks finish. For numbers now,")
+        print("re-run with --scale 300; the class shares are stable at that")
+        print("resolution even though the absolute areas are not.")
+        return 0
     print(f"{'class':<24}{'area (ha)':>14}{'share':>9}")
     for name, stats in table.items():
         print(f"{name:<24}{stats['area_ha']:>14,.1f}{stats['share']:>9.2%}")
