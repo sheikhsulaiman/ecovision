@@ -38,7 +38,10 @@ measures the sampler rather than the model.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import ee
@@ -87,6 +90,17 @@ IGNORE_INDEX = 255
 # A patch mostly outside the district costs a full forward pass to learn
 # almost nothing.
 MIN_VALID_FRACTION = 0.70
+
+# computePixels is one network round trip per patch and is I/O bound, so
+# the serial loop spent almost all its time waiting. Earth Engine allows
+# well over this concurrently; the cap is here to stay a polite client.
+MAX_WORKERS = 12
+
+# Patches rejected by the validity or informativeness filters leave no file
+# behind, so a resumed run refetched every one of them — at 262 of 927 that
+# is a third of the work repeated on each restart, for nothing. Recording
+# the rejections makes resume actually resumable.
+SKIP_FILE = "_skipped.json"
 
 
 def patch_origins(bounds: tuple[float, float, float, float]) -> list[tuple[float, float]]:
@@ -157,66 +171,83 @@ def run_split(district: str, year: int, split: str, dry_run: bool, limit: int | 
 
     aoi = ee.FeatureCollection(f"{pp.ASSET_ROOT}{district}_shp").geometry()
     stack = pp.build_composite(aoi, year)
-    label = lb.build_labels(aoi, year).rename("label")
+    # `district` is required, not optional: without it plantation_mask()
+    # never fires and every Sylhet tea pixel is labelled natural forest.
+    # That silently undoes the whole hand-digitised class 2 and would have
+    # made E4's tea result meaningless while looking entirely normal.
+    label = lb.build_labels(aoi, year, district).rename("label")
     combined = stack.addBands(label).toFloat()
     band_names = combined.bandNames().getInfo()
 
     out_dir = OUT_DIR / f"{district}_{year}_{split}"
-    if not dry_run:
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-    planned = kept = skipped = failed = 0
+    tasks = []
+    planned = 0
     for _, block in blocks.iterrows():
         origins = patch_origins(block.geometry.bounds)
         planned += len(origins)
-        if dry_run:
-            continue
         for i, (x, y) in enumerate(origins):
-            if limit and kept >= limit:
-                break
-            # Resumable: a run interrupted partway should not refetch what
-            # it already has. Each patch is a separate network round trip,
-            # so this is the difference between minutes and an hour.
-            target = out_dir / f"{block.block_id}_{i:02d}.npz"
-            if not dry_run and target.exists():
-                kept += 1
-                continue
-            arr = fetch_patch(combined, x, y, band_names)
-            if arr is None:
-                failed += 1
-                continue
-            stacked = np.stack([arr[b] for b in band_names], axis=-1)
-            raw_features = stacked[..., :-1]
-            raw_label = stacked[..., -1]
+            tasks.append((f"{block.block_id}_{i:02d}", x, y))
 
-            # Validity is judged on the composite bands, NOT on terrain:
-            # SRTM is global and stays finite even outside the district, so
-            # a terrain-based check would call every edge pixel valid.
-            valid = np.isfinite(raw_features[..., :-3]).all(axis=-1) & np.isfinite(raw_label)
-            valid_fraction = float(valid.mean())
-            if valid_fraction < MIN_VALID_FRACTION:
-                skipped += 1
-                continue
+    if dry_run:
+        return {"blocks": len(blocks), "planned": planned,
+                "kept": 0, "skipped": 0, "failed": 0}
 
-            features = np.nan_to_num(
-                raw_features, nan=0.0, posinf=0.0, neginf=0.0
-            ).astype(np.float32)
-            lab = np.where(valid, np.nan_to_num(raw_label, nan=0.0), IGNORE_INDEX)
-            lab = lab.astype(np.uint8)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    skip_path = out_dir / SKIP_FILE
+    known_skips = set(json.loads(skip_path.read_text())) if skip_path.exists() else set()
 
-            if not informative(lab, district, split):
-                skipped += 1
-                continue
-            np.savez_compressed(
-                out_dir / f"{block.block_id}_{i:02d}.npz",
-                x=features, y=lab, valid=valid,
-            )
-            kept += 1
-        if limit and kept >= limit:
-            break
+    done = sum(1 for name, _, _ in tasks if (out_dir / f"{name}.npz").exists())
+    todo = [t for t in tasks
+            if not (out_dir / f"{t[0]}.npz").exists() and t[0] not in known_skips]
+    if limit:
+        todo = todo[:limit]
 
-    return {"blocks": len(blocks), "planned": planned, "kept": kept,
-            "skipped": skipped, "failed": failed}
+    counts = {"kept": done, "skipped": len(known_skips), "failed": 0}
+    lock = threading.Lock()
+
+    def work(task: tuple[str, float, float]) -> None:
+        name, x, y = task
+        arr = fetch_patch(combined, x, y, band_names)
+        if arr is None:
+            with lock:
+                counts["failed"] += 1
+            return
+
+        stacked = np.stack([arr[b] for b in band_names], axis=-1)
+        raw_features = stacked[..., :-1]
+        raw_label = stacked[..., -1]
+
+        # Validity is judged on the composite bands, NOT on terrain:
+        # SRTM is global and stays finite even outside the district, so
+        # a terrain-based check would call every edge pixel valid.
+        valid = np.isfinite(raw_features[..., :-3]).all(axis=-1) & np.isfinite(raw_label)
+        if float(valid.mean()) < MIN_VALID_FRACTION:
+            with lock:
+                counts["skipped"] += 1
+                known_skips.add(name)
+            return
+
+        features = np.nan_to_num(
+            raw_features, nan=0.0, posinf=0.0, neginf=0.0
+        ).astype(np.float32)
+        lab = np.where(valid, np.nan_to_num(raw_label, nan=0.0), IGNORE_INDEX).astype(np.uint8)
+
+        if not informative(lab, district, split):
+            with lock:
+                counts["skipped"] += 1
+                known_skips.add(name)
+            return
+
+        np.savez_compressed(out_dir / f"{name}.npz", x=features, y=lab, valid=valid)
+        with lock:
+            counts["kept"] += 1
+
+    if todo:
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+            list(pool.map(work, todo))
+        skip_path.write_text(json.dumps(sorted(known_skips)))
+
+    return {"blocks": len(blocks), "planned": planned, **counts}
 
 
 def main() -> int:

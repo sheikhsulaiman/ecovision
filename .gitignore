@@ -46,3 +46,14 @@ venv/
 # Derived review chips — 1.6 GB of PNGs, regenerable from the candidate
 # polygons. Keep the review CSV, not the imagery.
 tearesults/chips/
+
+# Interpretation aids, both regenerable from src/interpret_tool.py: the
+# chip cache, and the ~30 MB self-contained HTML pages built from it. What
+# must be committed is the interpreter's OUTPUT — the exported CSVs land in
+# data/reference/, which is tracked.
+data/interpret_cache/
+outputs/interpret/
+
+# The Kaggle upload bundle — ~840 MB of the same patches already ignored
+# above, rezipped. Rebuild with src/package_kaggle.py.
+outputs/kaggle/
