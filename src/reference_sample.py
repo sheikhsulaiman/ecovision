@@ -106,12 +106,16 @@ STRATUM_CODES = {
 # Strata whose inputs do not exist yet. See build_strata().
 BLOCKED_STRATA = {
     "plantation": (
-        "needs tea/rubber estate boundaries from BFD/BFIS, still outstanding "
-        "(Phase 0.1). No defensible spectral proxy — that is the whole "
-        "Sylhet problem this thesis exists to solve, so a proxy would beg "
-        "the question."
+        "only Sylhet has a plantation layer. Siddik et al. (2025) report no "
+        "tea estates in Gazipur or Bandarban, and no source exists for "
+        "Bandarban's teak or rubber."
     ),
 }
+
+# Hand-digitised tea estates — see src/ingest_tea.py. The only source of
+# the plantation stratum, and Sylhet-only.
+TEA_ESTATES = REPO / "data" / "vector" / "sylhet_tea_estates.geojson"
+PLANTATION_DISTRICTS = {"sylhet"}
 
 # Above this share of a stratum's pixels, the sample stops behaving like a
 # draw from a large population and the variance formulae get conservative.
@@ -205,6 +209,23 @@ def build_strata(aoi: ee.Geometry, district: str) -> tuple[ee.Image, list[str]]:
         # probabilities stay known and the estimator still corrects.
         strata = strata.where(loss.And(gain), STRATUM_CODES["cyclical"])
         available.append("cyclical")
+    if district in PLANTATION_DISTRICTS and TEA_ESTATES.exists():
+        import geopandas as gpd
+
+        estates = gpd.read_file(TEA_ESTATES).to_crs("EPSG:4326")
+        feats = [
+            ee.Feature(ee.Geometry(g.__geo_interface__), {"tea": 1})
+            for g in estates.geometry
+            if g is not None and not g.is_empty
+        ]
+        if feats:
+            tea = (ee.FeatureCollection(feats)
+                   .reduceToImage(["tea"], ee.Reducer.first()).gt(0).unmask(0))
+            # Plantation overrides whatever Hansen called these pixels. An
+            # estate is class 2 whether Hansen saw canopy there or not.
+            strata = strata.where(tea, STRATUM_CODES["plantation"])
+            available.append("plantation")
+
     # Water is excluded from sampling rather than given a stratum: open
     # water is not in dispute and spending interpretation hours on it
     # buys nothing.
@@ -262,12 +283,18 @@ def stratum_areas(strata: ee.Image, aoi: ee.Geometry, available: list[str]) -> d
     return out
 
 
-def draw(district: str, samples: int | None = None) -> pd.DataFrame:
+def draw(district: str, samples: int | None = None,
+         only: str | None = None) -> pd.DataFrame:
     aoi = ee.FeatureCollection(f"{pp.ASSET_ROOT}{district}_shp").geometry()
     strata, available = build_strata(aoi, district)
 
     wanted = ALLOCATION[district]
     usable = {k: v for k, v in wanted.items() if k in available}
+    if only:
+        if only not in usable:
+            sys.exit(f"{district}: stratum '{only}' not available "
+                     f"(have: {', '.join(usable)})")
+        usable = {only: usable[only]}
 
     class_values = [STRATUM_CODES[k] for k in usable]
     class_points = [samples or usable[k] for k in usable]
@@ -286,12 +313,16 @@ def draw(district: str, samples: int | None = None) -> pd.DataFrame:
     info = fc.getInfo()
 
     inverse = {v: k for k, v in STRATUM_CODES.items()}
+    # Top-up points get a distinct id prefix. They are a SEPARATE sample
+    # with their own inclusion probabilities and must never be silently
+    # merged with the first draw — the ids make that impossible to forget.
+    prefix = "P" if only else ""
     rows = []
     for i, feat in enumerate(info["features"], 1):
         lon, lat = feat["geometry"]["coordinates"]
         code = feat["properties"]["stratum"]
         rows.append({
-            "point_id": f"{district[:3].upper()}-{i:04d}",
+            "point_id": f"{district[:3].upper()}-{prefix}{i:04d}",
             "district": district,
             "stratum": inverse[code],
             "lon": round(lon, 6),
@@ -343,6 +374,7 @@ def main() -> int:
                         help="actually draw and write the sample")
     parser.add_argument("--dry-run", action="store_true", default=True)
     parser.add_argument("--district", choices=pp.DISTRICTS)
+    parser.add_argument("--stratum", help="draw ONE stratum only (a top-up sample)")
     args = parser.parse_args()
 
     try:
@@ -384,8 +416,9 @@ def main() -> int:
                 "end_year": pp.END_YEAR, "districts": {}}
 
     for district in districts:
-        frame = draw(district)
-        master = OUT_DIR / f"reference_sample_{district}.csv"
+        frame = draw(district, only=args.stratum)
+        tag = f"_{args.stratum}_topup" if args.stratum else ""
+        master = OUT_DIR / f"reference_sample_{district}{tag}.csv"
         frame.to_csv(master, index=False)
 
         # One blank copy per author, each interpreting every point. Logged
@@ -393,7 +426,7 @@ def main() -> int:
         # the disagreements are the evidence, not noise to be tidied away.
         for author in AUTHORS:
             frame.to_csv(
-                OUT_DIR / f"interpretation_{district}_{author}.csv", index=False
+                OUT_DIR / f"interpretation_{district}{tag}_{author}.csv", index=False
             )
 
         manifest["districts"][district] = {

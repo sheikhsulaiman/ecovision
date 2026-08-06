@@ -261,6 +261,41 @@ spectral similarity to define the stratum would assume the answer. A
 *location* proxy from an independent published source does not have that
 problem and is acceptable.
 
+#### What class 2 actually contains — FINAL
+
+Drawing stopped on 2026-08-06 at **1,303 ha across 12 polygons**, all in
+Sylhet, hand-digitised in Google Earth Pro against sub-metre imagery and
+ingested by `src/ingest_tea.py`.
+
+Effect on the 2024 Sylhet labels: natural forest fell from 28,526 ha to
+27,629 ha and plantation rose from 0 to 1,419 ha. **About 1,800 ha that
+Hansen calls forest is tea.**
+
+**Stated limitation for Chapter 6.** Siddik et al. (2025) report over
+10,000 ha under tea in Sylhet district. Class 2 covers roughly an eighth
+of it, so **tea outside the drawn polygons is still labelled natural
+forest** and the Sylhet confusion is *reduced, not eliminated*. Any
+comparison of natural-forest area in Sylhet against Gazipur or Bandarban
+must carry that caveat. The shortfall is concentrated in Gowainghat and
+Jaintiapur.
+
+Gazipur and Bandarban have **no plantation class at all** — no tea there
+per Siddik et al., and no source for Bandarban's teak or rubber.
+
+**The check that made this trustworthy.** One polygon, tea10, was drawn at
+1,906 ha and flagged provisional because it spanned the Khadimnagar
+reserve forest, which WDPA maps only as a gazetted 700 ha core. Visual
+inspection at 24.953 N, 91.945 E confirmed the concern and it was trimmed
+to 321 ha — an **83% cut**. Roughly 1,600 ha of hill forest would
+otherwise have been labelled tea, and a model trained on that would have
+learned precisely the confusion RQ3 sets out to measure, invisibly,
+because the error would have resembled a plausible result.
+
+That episode belongs in Chapter 8: it is direct evidence of how easily
+plantation and natural forest are conflated even by a careful human with
+sub-metre imagery, which is the premise the whole Sylhet component rests
+on.
+
 #### Sources checked and ruled out
 
 Recorded so nobody repeats the search. **Manual digitising is the path**,
