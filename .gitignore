@@ -42,3 +42,7 @@ venv/
 
 # OS
 .DS_Store
+
+# Derived review chips — 1.6 GB of PNGs, regenerable from the candidate
+# polygons. Keep the review CSV, not the imagery.
+tearesults/chips/

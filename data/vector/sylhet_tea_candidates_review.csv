@@ -1,24 +1,24 @@
 review_order,candidate_id,upazila,expected_in_upazila,area_ha,built_frac,tree_frac,is_tea,estate_name,notes
-1,TEA-C000,Sylhet Sadar,8,6620.0,0.002,0.987,,,
-2,TEA-C001,Gowainghat,4,247.2,0.0,0.989,,,
-3,TEA-C002,Gowainghat,4,141.7,0.002,0.969,,,
-4,TEA-C003,Gowainghat,4,134.1,0.002,0.975,,,
-5,TEA-C004,Gowainghat,4,117.0,0.0,0.962,,,
-6,TEA-C005,Fenchuganj,3,1686.1,0.001,0.98,,,
-7,TEA-C006,Jaintiapur,3,634.8,0.0,0.976,,,
-8,TEA-C007,Jaintiapur,3,246.5,0.0,0.981,,,
-9,TEA-C008,Jaintiapur,3,218.2,0.0,0.99,,,
-10,TEA-C009,Jaintiapur,3,196.0,0.004,0.979,,,
-11,TEA-C010,Fenchuganj,3,149.3,0.008,0.967,,,
-12,TEA-C011,Jaintiapur,3,103.7,0.002,0.98,,,
-13,TEA-C012,Fenchuganj,3,100.1,0.014,0.96,,,
-14,TEA-C013,Kanaighat,1,1174.4,0.0,0.991,,,
-15,TEA-C014,Kanaighat,1,317.4,0.0,0.989,,,
-16,TEA-C015,Kanaighat,1,291.9,0.0,0.981,,,
-17,TEA-C016,Kanaighat,1,186.8,0.0,0.99,,,
-18,TEA-C017,Kanaighat,1,149.9,0.005,0.973,,,
-19,TEA-C018,Kanaighat,1,141.0,0.0,0.989,,,
-20,TEA-C019,Kanaighat,1,130.8,0.0,0.965,,,
-21,TEA-C020,Kanaighat,1,121.8,0.0,0.974,,,
-22,TEA-C021,Kanaighat,1,107.8,0.0,0.982,,,
-23,TEA-C022,Kanaighat,1,103.9,0.001,0.984,,,
+1,TEA-C000,Sylhet Sadar,8,6620.0,0.002,0.987,yes,"Alibahar + Khadim + Lackatoorah + Malnicherra + Star/Tarapur (merged, needs splitting)","Point-in-polygon CONFIRMED: 5 of 8 expected Sylhet Sadar estates geolocate inside this single polygon via Google Places. Real tea, but this is a merged multi-estate blob, not one estate -- recommend splitting before use. Burjan/Daddnagar/Dalia not located."
+2,TEA-C001,Gowainghat,4,247.2,0.0,0.989,uncertain,,"Jafflong Tea Estate (Google Places pin, type=neighborhood so imprecise) is 2.67km away -- too far for a confident match at this precision. Needs visual confirmation."
+3,TEA-C002,Gowainghat,4,141.7,0.002,0.969,no,,"previously reviewed by human (kept as-is); note Jafflong Tea Estate Google pin sits only 0.58km away, closest of the three, but the human review already excluded this parcel"
+4,TEA-C003,Gowainghat,4,134.1,0.002,0.975,uncertain,,Jafflong Tea Estate pin is 3.1km away -- too far for confident match. Needs visual confirmation.
+5,TEA-C004,Gowainghat,4,117.0,0.0,0.962,likely yes,Fatehpur,"Fatehpur Tea Garden (Google Places) is only 1.21km from this polygon -- closest match found for Gowainghat, reasonable confidence given pin imprecision."
+6,TEA-C005,Fenchuganj,3,1686.1,0.001,0.98,yes,Monipur + Moomincherra (merged),"Point-in-polygon CONFIRMED: both Monipur Tea Estate and Moomincherra Tea Estate geolocate inside this polygon. Real tea, merged 2-estate blob (1686 ha is plausible for two combined real estates)."
+7,TEA-C006,Jaintiapur,3,634.8,0.0,0.976,likely yes,Lalakhal (alt. Google entry),"Google's second ""Lalakhal Tea Garden"" pin sits only 0.21km from this polygon -- strong proximity match, though not literally inside the boundary."
+8,TEA-C007,Jaintiapur,3,246.5,0.0,0.981,likely yes,Lallakhal (M. Ahmed Group),"Lallakhal Tea Estate (M. Ahmed Group, Places-verified) is only 0.23km away -- strong match. Afifanagar (1.06km) is also nearby; these two M.Ahmed estates may be adjacent/contiguous."
+9,TEA-C008,Jaintiapur,3,218.2,0.0,0.99,uncertain,,No named Jaintiapur estate located within 5km. Possible over-detection or an unlisted/unnamed block.
+10,TEA-C009,Jaintiapur,3,196.0,0.004,0.979,uncertain,,Sreepore pin is 5.15km away -- too far to confirm. No other named estate closer.
+11,TEA-C010,Fenchuganj,3,149.3,0.008,0.967,uncertain,,"Could not geolocate ""Dallucherra"" (the 3rd expected Fenchuganj estate) via Google Places under any spelling tried -- can't confirm whether this or C012 is it."
+12,TEA-C011,Jaintiapur,3,103.7,0.002,0.98,uncertain,,Afifanagar pin is 3.25km away -- weaker than its match to C007. Not confirmed.
+13,TEA-C012,Fenchuganj,3,100.1,0.014,0.96,uncertain,,"Could not geolocate ""Dallucherra"" (the 3rd expected Fenchuganj estate) via Google Places under any spelling tried -- can't confirm whether this or C010 is it."
+14,TEA-C013,Kanaighat,1,1174.4,0.0,0.991,likely no,,"Kanaighat has only 1 documented real tea estate (Loobacherra), already matched to C015. Area (1174 ha) is also implausibly large for a single estate -- likely merged natural hill-forest, not tea."
+15,TEA-C014,Kanaighat,1,317.4,0.0,0.989,likely no,,No named estate located here; Kanaighat's one documented estate is already matched elsewhere (C015).
+16,TEA-C015,Kanaighat,1,291.9,0.0,0.981,yes,Loobacherra,"Point-in-polygon CONFIRMED: Loobacherra Tea Estate (Google Places, verified business listing) falls directly inside this polygon. This is Kanaighat's one documented tea estate."
+17,TEA-C016,Kanaighat,1,186.8,0.0,0.99,likely no,,"No named estate located here; Kanaighat only has 1 documented estate, already matched (C015)."
+18,TEA-C017,Kanaighat,1,149.9,0.005,0.973,likely no,,"No named estate located here; Kanaighat only has 1 documented estate, already matched (C015)."
+19,TEA-C018,Kanaighat,1,141.0,0.0,0.989,likely no,,"No named estate located here; Kanaighat only has 1 documented estate, already matched (C015)."
+20,TEA-C019,Kanaighat,1,130.8,0.0,0.965,likely no,,"No named estate located here; Kanaighat only has 1 documented estate, already matched (C015)."
+21,TEA-C020,Kanaighat,1,121.8,0.0,0.974,likely no,,"No named estate located here; Kanaighat only has 1 documented estate, already matched (C015)."
+22,TEA-C021,Kanaighat,1,107.8,0.0,0.982,likely no,,"No named estate located here; Kanaighat only has 1 documented estate, already matched (C015)."
+23,TEA-C022,Kanaighat,1,103.9,0.001,0.984,likely no,,"No named estate located here; Kanaighat only has 1 documented estate, already matched (C015)."
