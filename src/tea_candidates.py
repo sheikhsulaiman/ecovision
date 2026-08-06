@@ -101,7 +101,15 @@ BUILTUP_CLASS = 50
 # a kilometre across and survive; village corridors do not. Multipart
 # results are then split, which is what breaks the 14,053 ha blob into
 # reviewable pieces.
+# Default 150 m. Measured consequence: Gowainghat fell from 4,942 ha of
+# candidates to 640 ha and Jaintiapur to 1,399 ha, which is too little for
+# the four and three estates the worklist expects there. Estates following
+# narrow valleys are narrower than 300 m and did not survive. Override with
+# --opening for those upazilas.
 OPENING_M = 150
+
+# Set from --opening at runtime; None means use OPENING_M.
+OPENING_OVERRIDE = None
 
 # Protected areas are natural forest by designation, so they cannot be
 # tea. Khadimnagar National Park and Tilagar Eco Park both sit inside the
@@ -153,7 +161,7 @@ def candidate_blocks(zone: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         frame = frame[frame["area_ha"] <= MAX_AREA_HA].copy()
 
     frame = subtract_protected(frame, region)
-    frame = split_by_opening(frame)
+    frame = split_by_opening(frame, OPENING_OVERRIDE)
 
     frame["area_ha"] = (frame.to_crs(pp.NATIVE_CRS).area / 1e4).round(1)
     return frame[frame["area_ha"] >= MIN_AREA_HA].copy()
@@ -174,14 +182,15 @@ def subtract_protected(frame: gpd.GeoDataFrame, region: ee.Geometry) -> gpd.GeoD
     return frame.overlay(pa[["geometry"]], how="difference")
 
 
-def split_by_opening(frame: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def split_by_opening(frame: gpd.GeoDataFrame, opening_m: float = None) -> gpd.GeoDataFrame:
     """Sever thin village corridors, then split what falls apart.
 
     Erode and dilate in a projected CRS — buffering in degrees would
     shrink differently by latitude and is meaningless in metres.
     """
+    opening_m = OPENING_M if opening_m is None else opening_m
     metric = frame.to_crs(pp.NATIVE_CRS)
-    opened = metric.buffer(-OPENING_M).buffer(OPENING_M)
+    opened = metric.buffer(-opening_m).buffer(opening_m)
     out = gpd.GeoDataFrame(geometry=opened, crs=pp.NATIVE_CRS)
     out = out[~out.geometry.is_empty & out.geometry.notna()]
     return out.explode(index_parts=False).reset_index(drop=True).to_crs("EPSG:4326")
@@ -262,6 +271,12 @@ def write_kml(frame: gpd.GeoDataFrame, path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--min-area", type=float, default=MIN_AREA_HA)
+    parser.add_argument("--opening", type=float,
+                        help="erosion in metres; lower keeps narrow valley estates")
+    parser.add_argument("--upazilas", nargs="+",
+                        help="restrict to these upazilas")
+    parser.add_argument("--out-suffix", default="",
+                        help="suffix for output filenames, to avoid overwriting")
     args = parser.parse_args()
 
     zone_path = VECTOR_DIR / "sylhet_tea_search_zone.geojson"
@@ -273,11 +288,20 @@ def main() -> int:
     except Exception as exc:
         sys.exit(f"Earth Engine init failed: {exc}")
 
+    global OPENING_OVERRIDE
+    OPENING_OVERRIDE = args.opening
+
     zone = gpd.read_file(zone_path)
+    if args.upazilas:
+        zone = zone[zone["shapeName"].isin(args.upazilas)].copy()
+        if zone.empty:
+            sys.exit(f"no upazilas matched {args.upazilas}")
+        print(f"restricted to: {', '.join(sorted(zone.shapeName.unique()))}")
     print(f"search zone: {len(zone)} upazila parts, "
           f"{zone.to_crs(pp.NATIVE_CRS).area.sum() / 1e6:,.0f} km2")
     cap = f"up to {MAX_AREA_HA:,.0f} ha" if MAX_AREA_HA else "no upper cap"
-    print(f"proposing canopy blocks from {args.min_area:,.0f} ha, {cap}")
+    print(f"proposing canopy blocks from {args.min_area:,.0f} ha, {cap}, "
+          f"opening {args.opening or OPENING_M:.0f} m")
 
     blocks = candidate_blocks(zone)
     if blocks.empty:
@@ -331,10 +355,11 @@ def main() -> int:
         print(f"{upazila:<16}{len(group):>12}{group['area_ha'].sum():>14,.0f}   {expect}")
 
     keep = ["review_order", "candidate_id", "upazila", "expected_in_upazila", "area_ha", "built_frac", "tree_frac", "is_tea", "estate_name", "notes", "geometry"]
-    blocks[keep].to_file(VECTOR_DIR / "sylhet_tea_candidates.geojson", driver="GeoJSON")
-    write_kml(blocks, VECTOR_DIR / "sylhet_tea_candidates.kml")
+    sfx = args.out_suffix
+    blocks[keep].to_file(VECTOR_DIR / f"sylhet_tea_candidates{sfx}.geojson", driver="GeoJSON")
+    write_kml(blocks, VECTOR_DIR / f"sylhet_tea_candidates{sfx}.kml")
     blocks[[c for c in keep if c != "geometry"]].to_csv(
-        VECTOR_DIR / "sylhet_tea_candidates_review.csv", index=False
+        VECTOR_DIR / f"sylhet_tea_candidates{sfx}_review.csv", index=False
     )
 
     total = blocks["area_ha"].sum()
