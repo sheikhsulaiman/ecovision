@@ -1,26 +1,26 @@
 [
   {
     "per_class_iou": {
-      "non_forest": 0.900639044172268,
-      "natural_forest": 0.250477667322017,
-      "plantation": 0.0,
-      "water": 0.401553308470145
+      "non_forest": 0.8811446151754148,
+      "natural_forest": 0.188494124708544,
+      "plantation": 0.22666521786374008,
+      "water": 0.45391137855579866
     },
     "per_class_f1": {
-      "non_forest": 0.9477223431074975,
-      "natural_forest": 0.40061118061937395,
-      "plantation": 0.0,
-      "water": 0.5730118234438867
+      "non_forest": 0.9368175185119927,
+      "natural_forest": 0.31719824404646285,
+      "plantation": 0.36956329169988483,
+      "water": 0.6244003386323017
     },
-    "macro_f1": 0.4803363367926895,
-    "mean_iou": 0.3881675049911075,
-    "forest_f1": 0.40061118061937395,
-    "forest_iou": 0.250477667322017,
+    "macro_f1": 0.5619948482226605,
+    "mean_iou": 0.4375538340758744,
+    "forest_f1": 0.31719824404646285,
+    "forest_iou": 0.188494124708544,
     "district": "sylhet",
     "experiment": "E4",
     "seed": 0,
     "year": 2024,
     "n_bands": 20,
-    "best_val_miou": 0.4222779801122951
+    "best_val_miou": 0.5733528287054671
   }
 ]

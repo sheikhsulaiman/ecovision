@@ -251,3 +251,75 @@ class is under-represented in training by a factor of four, so a weak
 plantation F1 after this fix is evidence about *data scarcity*, not about
 whether GLCM texture separates tea from forest. Distinguish the two when
 writing the RQ3 discussion.
+
+---
+
+## Results after the split fix, 2026-08-07
+
+### RQ3 answered: GLCM texture does help
+
+Sylhet U-Net, per-class F1, single seed:
+
+| run | non_forest | natural_forest | **plantation** | water | macro F1 |
+|---|---|---|---|---|---|
+| E3, with texture (23 bands) | 0.9389 | 0.3163 | **0.4520** | 0.6508 | 0.5895 |
+| E4, no texture (20 bands) | 0.9368 | 0.3172 | **0.3696** | 0.6244 | 0.5620 |
+
+**+0.0824 plantation F1, a 22% relative improvement**, and the macro gain
+(+0.0275) is almost entirely that one class. The other three classes move
+by less than 0.03. That is the shape the hypothesis predicted: texture is
+supposed to help where the confusion is structural rather than spectral,
+and it did, precisely there and essentially nowhere else.
+
+Before the split fix this comparison returned 0.0000 against 0.0000.
+
+### RQ2: the best model differs by district
+
+| district | RF | U-Net | soft vote | E7 stacked |
+|---|---|---|---|---|
+| Gazipur | 0.4125 | 0.3157 | 0.3224 | **0.4443** |
+| Sylhet | 0.5028 | **0.5895** | 0.5450 | 0.5187 |
+| Bandarban | 0.4632 | 0.4607 | 0.4688 | **0.4754** |
+
+Macro F1 against Hansen training labels — pipeline comparison, not a
+thesis accuracy figure.
+
+E7 wins in Gazipur and Bandarban. **U-Net wins Sylhet**, and the reason is
+specific and worth stating rather than hiding.
+
+### Why the stack loses in Sylhet: a class its meta-learner never saw
+
+E7's plantation F1 is **0.0000** while the U-Net inside it scores 0.4520.
+The stack threw away the one thing that was working.
+
+The meta-learner is fitted on the validation split. Pinning the two tea
+blocks to train and test leaves **val with no class 2 at all**, so the
+meta-learner never observed plantation and cannot emit it, however
+confidently the U-Net argues for it.
+
+This is a property of *where the meta-learner is fitted*, not a flaw in
+stacking, and it was silent until the per-class numbers were compared.
+`src/models/ensemble.py` now warns when any class is missing from the
+meta-fitting split.
+
+It is also a real methodological point for Chapter 8: stacked ensembles
+inherit the class coverage of their meta-training set, so on a rare class
+confined to few spatial blocks a stack can be strictly worse than its own
+best member.
+
+### RF versus U-Net, and what it says about RQ5
+
+RF beats U-Net in Gazipur (0.4125 vs 0.3157), which has **55 training
+patches**. U-Net beats RF in Sylhet (0.5895 vs 0.5028) with **167**. They
+tie in Bandarban with 260, where the classes are near-balanced anyway.
+
+Deep learning needs data. Where the labelled sample is small, the cheap
+model is not merely competitive — it is better.
+
+On plantation specifically the ordering reverses hard: U-Net 0.4520
+against RF-on-patch-pixels 0.0286. Tea is a *spatial* pattern — planted
+rows, uniform canopy, geometric boundaries — and a per-pixel model has no
+access to any of that. Note that the standalone RF (E1/E2, stratified
+pixel draw, 4,000 per class) reaches 0.79-0.81 on plantation; that is a
+balanced-sample number and is not comparable to either figure above,
+where class 2 sits at its true 0.108% prevalence.

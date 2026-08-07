@@ -1,0 +1,26 @@
+[
+  {
+    "per_class_iou": {
+      "non_forest": 0.884798023278673,
+      "natural_forest": 0.18788928167760863,
+      "plantation": 0.29195444080940264,
+      "water": 0.4823299343483727
+    },
+    "per_class_f1": {
+      "non_forest": 0.9388783438339303,
+      "natural_forest": 0.3163414041622804,
+      "plantation": 0.451957796014068,
+      "water": 0.6507727101394647
+    },
+    "macro_f1": 0.5894875635374358,
+    "mean_iou": 0.4617429200285142,
+    "forest_f1": 0.3163414041622804,
+    "forest_iou": 0.18788928167760863,
+    "district": "sylhet",
+    "experiment": "E3",
+    "seed": 0,
+    "year": 2024,
+    "n_bands": 23,
+    "best_val_miou": 0.5678515874489253
+  }
+]

@@ -161,6 +161,21 @@ def run(district: str, year: int, checkpoint: Path, seed: int, device: str,
     meta = LogisticRegression(max_iter=1000)
     meta.fit(meta_x[valid_val][index], y_val[valid_val][index])
 
+    # A class the meta-learner never sees, it can never output — no matter
+    # how confidently a base model predicts it. In Sylhet the plantation
+    # blocks are pinned to train and test, so val holds no class 2, and the
+    # stack scored 0.0000 on plantation while the U-Net underneath it
+    # scored 0.4520. Stacking discarded the one thing that was working.
+    #
+    # This is a property of where the meta-learner is fitted, not a flaw in
+    # stacking, and it is silent unless something says so.
+    absent = sorted(set(range(n_classes)) - set(int(c) for c in meta.classes_))
+    if absent:
+        print("  WARNING: classes absent from the validation split and therefore")
+        print(f"  unpredictable by the stack: {[un.CLASSES[c] for c in absent]}")
+        print("  Compare per-class F1 against the base models before reporting E7")
+        print("  as best — on those classes the stack cannot win by construction.")
+
     # --- score all three on TEST --------------------------------------
     x_test, y_test, patches_test = data["test"]
     valid_test = y_test != IGNORE_INDEX

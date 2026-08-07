@@ -3,51 +3,51 @@
   "year": 2024,
   "seed": 0,
   "experiment": "E3",
-  "n_test_pixels": 648476,
+  "n_test_pixels": 621444,
   "scores": {
     "RF (patch pixels)": {
-      "macro_f1": 0.47790887167866736,
-      "mean_iou": 0.3875514692973314,
+      "macro_f1": 0.5027538859514173,
+      "mean_iou": 0.4047994676246722,
       "per_class_f1": {
-        "non_forest": 0.9500056585257092,
-        "natural_forest": 0.37662462166344823,
-        "plantation": 0.0,
-        "water": 0.585005206525512
+        "non_forest": 0.9421398072727241,
+        "natural_forest": 0.4253580697875613,
+        "plantation": 0.028611549938564157,
+        "water": 0.6149061168068195
       },
-      "overall_accuracy": 0.9015075345887897
+      "overall_accuracy": 0.8882248440728369
     },
     "U-Net": {
-      "macro_f1": 0.48366622187441066,
-      "mean_iou": 0.39065382254176045,
+      "macro_f1": 0.5894875635374358,
+      "mean_iou": 0.4617429200285142,
       "per_class_f1": {
-        "non_forest": 0.948982463932407,
-        "natural_forest": 0.4230871826790557,
-        "plantation": 0.0,
-        "water": 0.5625952408861798
+        "non_forest": 0.9388783438339302,
+        "natural_forest": 0.31634140416228035,
+        "plantation": 0.451957796014068,
+        "water": 0.6507727101394648
       },
-      "overall_accuracy": 0.8942273885232452
+      "overall_accuracy": 0.8785811754558738
     },
     "soft vote": {
-      "macro_f1": 0.4968670968653003,
-      "mean_iou": 0.405535099985319,
+      "macro_f1": 0.5449863758615134,
+      "mean_iou": 0.43713701649031345,
       "per_class_f1": {
-        "non_forest": 0.9532330768302815,
-        "natural_forest": 0.41038941225828596,
-        "plantation": 0.0,
-        "water": 0.6238458983726337
+        "non_forest": 0.9432985829995613,
+        "natural_forest": 0.36748347573754636,
+        "plantation": 0.16932534433118046,
+        "water": 0.6998381003777658
       },
-      "overall_accuracy": 0.9045269215822945
+      "overall_accuracy": 0.8875007241199528
     },
     "E7 stacked": {
-      "macro_f1": 0.5016490736737246,
-      "mean_iou": 0.40953537166274145,
+      "macro_f1": 0.5187084340274928,
+      "mean_iou": 0.4244905655272894,
       "per_class_f1": {
-        "non_forest": 0.9534128600325553,
-        "natural_forest": 0.4273426556240938,
+        "non_forest": 0.9454928920891963,
+        "natural_forest": 0.46131594305869217,
         "plantation": 0.0,
-        "water": 0.6258407790382492
+        "water": 0.6680249009620827
       },
-      "overall_accuracy": 0.9047165970675861
+      "overall_accuracy": 0.8890422950418703
     }
   }
 }
