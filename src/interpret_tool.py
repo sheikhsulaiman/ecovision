@@ -79,6 +79,21 @@ RETRIES = 3
 
 CLASSES = {0: "non_forest", 1: "natural_forest", 2: "plantation", 3: "water"}
 
+# One-key notes, per district, for the calls the protocol says cost kappa
+# (docs/interpretation_protocol.md §4). These are not classes and must not
+# become classes.
+#
+# Bandarban's pair is the important one. A jhum plot's CLASS is decided by
+# its canopy at the observation date, never by its land-use history — but
+# whether the loss is cyclical or permanent still has to be recorded, and
+# it belongs in notes. Without it RQ6 has nothing to validate the
+# LandTrendr separation against.
+TAGS = {
+    "bandarban": [("c", "cyclical"), ("p", "permanent"), ("x", "cloud at T0")],
+    "sylhet": [("t", "tea/forest boundary"), ("x", "cloud at T0")],
+    "gazipur": [("v", "homestead vegetation"), ("x", "cloud at T0")],
+}
+
 # Files the CSV asks for two calls per point: what it was at T0 and what
 # it is at T3. Change is derived from the pair, never interpreted directly
 # — an interpreter asked "did this change" anchors on the answer they want.
@@ -273,6 +288,10 @@ button{{background:#1a1e25;color:var(--fg);border:1px solid var(--line);
   border-radius:6px;padding:7px 13px;cursor:pointer;font-size:13px}}
 button:hover{{border-color:var(--hl)}}
 .done{{color:#7bd88f}}
+.opt.on{{border-color:var(--hl);background:#1f2a35}}
+input#notes{{width:100%;margin:8px 0 4px;padding:9px 11px;background:#1a1e25;
+  color:var(--fg);border:1px solid var(--line);border-radius:6px;font-size:14px}}
+input#notes:focus{{outline:none;border-color:var(--hl)}}
 </style>
 <header>
   <b>{district}</b><span class="meta">author {author}</span>
@@ -287,9 +306,15 @@ button:hover{{border-color:var(--hl)}}
   <div id="traj"></div>
   <div class="ask" id="ask"></div>
   <div class="opts" id="opts"></div>
+  <div class="ask">Confidence</div>
+  <div class="opts" id="conf"></div>
+  <div class="ask">Notes</div>
+  <div class="opts" id="tags"></div>
+  <input id="notes" placeholder="reason for a low call, boundary cases, anything reconciliation will need">
   <p class="meta">
-    <kbd>0</kbd>-<kbd>3</kbd> classify &nbsp; <kbd>f</kbd> flag low confidence &nbsp;
-    <kbd>u</kbd> undo &nbsp; <kbd>\u2190</kbd><kbd>\u2192</kbd> navigate.
+    <kbd>0</kbd>-<kbd>3</kbd> classify &nbsp; <kbd>h</kbd>/<kbd>m</kbd>/<kbd>l</kbd> confidence &nbsp;
+    <kbd>u</kbd> undo &nbsp; <kbd>\u2190</kbd><kbd>\u2192</kbd> navigate &nbsp;
+    <kbd>Esc</kbd> leave the notes box.
     Progress saves in this browser automatically \u2014 export before closing.
   </p>
 </main>
@@ -299,9 +324,11 @@ const CHIPS={chips};
 const TRAJ={traj};
 const EPOCHS={epochs};
 const CLASSES={classes};
+const TAGS={tags};
 const KEY="ecovision-{district}-{author}";
 let store=JSON.parse(localStorage.getItem(KEY)||"{{}}");
 let i=0,stage=0;
+const typing=()=>document.activeElement===document.getElementById("notes");
 
 function save(){{localStorage.setItem(KEY,JSON.stringify(store))}}
 function rec(p){{return store[p.point_id]||(store[p.point_id]={{}})}}
@@ -355,6 +382,19 @@ function render(){{
   document.getElementById("opts").innerHTML=Object.keys(CLASSES).map(k=>
     `<div class="opt" onclick="pick(${{k}})"><kbd>${{k}}</kbd>${{CLASSES[k]}}</div>`).join("");
 
+  // Confidence defaults to high so the common case costs no keystrokes.
+  // The protocol says use `low` freely — a forced confident-looking call
+  // turns a known limitation into a hidden error — so m and l are one key.
+  const conf=r.confidence||"high";
+  document.getElementById("conf").innerHTML=
+    [["h","high"],["m","medium"],["l","low"]].map(([k,v])=>
+      `<div class="opt ${{conf===v?"on":""}}" onclick="setConf('${{v}}')">`+
+      `<kbd>${{k}}</kbd>${{v}}</div>`).join("");
+  document.getElementById("tags").innerHTML=TAGS.map(t=>
+    `<div class="opt ${{(r.notes||"").includes(t[1])?"on":""}}" `+
+    `onclick="tag('${{t[1]}}')"><kbd>${{t[0]}}</kbd>${{t[1]}}</div>`).join("");
+  document.getElementById("notes").value=r.notes||"";
+
   const n=POINTS.filter(q=>(store[q.point_id]||{{}}).class_t3!=null).length;
   document.getElementById("fill").style.width=(100*n/POINTS.length)+"%";
   document.getElementById("count").textContent=`${{i+1}}/${{POINTS.length}} \u00b7 ${{n}} complete`;
@@ -366,6 +406,20 @@ function pick(k){{
   if(stage===0){{stage=1}}else{{stage=0;if(i<POINTS.length-1)i++}}
   render();
 }}
+function setConf(v){{rec(POINTS[i]).confidence=v;save();render()}}
+function tag(t){{
+  const r=rec(POINTS[i]);
+  const parts=(r.notes||"").split(";").map(s=>s.trim()).filter(Boolean);
+  const at=parts.indexOf(t);
+  if(at>=0)parts.splice(at,1);else parts.push(t);
+  r.notes=parts.join("; ");save();render();
+}}
+document.getElementById("notes").addEventListener("input",e=>{{
+  rec(POINTS[i]).notes=e.target.value;save();
+}});
+document.getElementById("notes").addEventListener("keydown",e=>{{
+  if(e.key==="Escape"||e.key==="Enter")e.target.blur();
+}});
 function go(d){{i=Math.max(0,Math.min(POINTS.length-1,i+d));stage=0;render()}}
 function jump(){{
   const v=prompt("point number or id");if(!v)return;
@@ -375,8 +429,14 @@ function jump(){{
   stage=0;render();
 }}
 document.addEventListener("keydown",e=>{{
+  // Every shortcut is a printable character, so without this guard the
+  // notes box is unusable: typing "low canopy" would reclassify the point.
+  if(typing())return;
   if(e.key>="0"&&e.key<="3")pick(+e.key);
-  else if(e.key==="f"){{const r=rec(POINTS[i]);r.flag=!r.flag;save();render()}}
+  else if(e.key==="h"||e.key==="m"||e.key==="l")
+    setConf({{h:"high",m:"medium",l:"low"}}[e.key]);
+  else if(e.key==="n"){{e.preventDefault();document.getElementById("notes").focus()}}
+  else if(TAGS.some(t=>t[0]===e.key))tag(TAGS.find(t=>t[0]===e.key)[1]);
   else if(e.key==="u"){{const r=rec(POINTS[i]);
     if(stage===1){{delete r.class_t0;stage=0}}else{{delete r.class_t3}}save();render()}}
   else if(e.key==="ArrowRight")go(1);
@@ -396,10 +456,13 @@ function exportCsv(){{
     const rows=[head.join(",")];
     for(const p of points){{
       const r=store[p.point_id]||{{}};
+      const done=r.class_t3!=null;
+      // Quoted: notes contain semicolons and commas by design.
       rows.push([p.point_id,p.district,p.stratum,p.lon,p.lat,
         r.class_t0!=null?CLASSES[r.class_t0]:"",
-        r.class_t3!=null?CLASSES[r.class_t3]:"",
-        r.flag?"low":"", ""].join(","));
+        done?CLASSES[r.class_t3]:"",
+        done?(r.confidence||"high"):"",
+        '"'+(r.notes||"").replace(/"/g,'""')+'"'].join(","));
     }}
     const blob=new Blob([rows.join("\\n")],{{type:"text/csv"}});
     const a=document.createElement("a");
@@ -455,6 +518,7 @@ def main() -> int:
             traj=json.dumps(traj),
             epochs=json.dumps(pp.EPOCHS),
             classes=json.dumps({str(k): v for k, v in CLASSES.items()}),
+            tags=json.dumps(TAGS.get(args.district, [])),
         ),
         encoding="utf-8",
     )
