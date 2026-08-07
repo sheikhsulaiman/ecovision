@@ -247,6 +247,7 @@ def main() -> int:
         print("Re-run with --from-asset once they finish.")
         return 0
 
+    rows = []
     for method, names in (("pcc", CHANGE), ("ndvi", {0: "no_change", 1: "change"})):
         try:
             image = ee.Image(asset_id(args.district, method))
@@ -259,7 +260,31 @@ def main() -> int:
         print(f"  {'class':<24}{'area (ha)':>14}{'share':>9}")
         for name, stats in table.items():
             print(f"  {name:<24}{stats['area_ha']:>14,.1f}{stats['share']:>9.2%}")
+            rows.append({"district": args.district, "method": method,
+                         "class": name, "area_ha": stats["area_ha"],
+                         "share": stats["share"]})
         print()
+
+    if rows:
+        import pandas as pd
+
+        TABLE_DIR.mkdir(parents=True, exist_ok=True)
+        out = TABLE_DIR / f"change_areas_{args.district}_{t0}_{t3}.csv"
+        pd.DataFrame(rows).to_csv(out, index=False)
+        print(f"Written: {out.relative_to(REPO)}\n")
+
+        # PCC's gain class is the honest warning sign in this table. The
+        # classifier is trained on 2024 and applied to 1990 (Option B), so
+        # any systematic under-calling of forest at T0 reappears as gain at
+        # T3. Implausibly large gain therefore measures classifier drift
+        # across time, not regrowth — and it is exactly the error
+        # accumulation that makes PCC the method to beat rather than trust.
+        gain = next((r["share"] for r in rows
+                     if r["method"] == "pcc" and r["class"] == "gain"), 0.0)
+        if gain > 0.10:
+            print(f"WARNING: PCC reports {gain:.1%} forest GAIN. Treat as")
+            print("classifier drift between 1990 and 2024, not as regrowth,")
+            print("until the reference sample says otherwise (Phase 8).")
 
     print("Raw pixel counts. NOT reportable — Phase 8 runs these through the")
     print("Olofsson estimator against the reference sample and attaches a")

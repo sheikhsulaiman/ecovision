@@ -156,6 +156,11 @@ def main() -> int:
             macro = np.array([r["macro_f1"] for r in runs])
             oa = np.array([r["overall_accuracy"] for r in runs])
             forest_f1 = np.array([r["per_class_f1"].get(1, np.nan) for r in runs])
+            # Class 2 is the RQ3 number and it exists only in Sylhet. NaN
+            # elsewhere is correct and must stay NaN rather than becoming 0:
+            # a district with no plantation has no plantation score, and
+            # zero would read as total failure to detect it.
+            plantation_f1 = np.array([r["per_class_f1"].get(2, np.nan) for r in runs])
             rows.append({
                 "district": district,
                 "experiment": experiment,
@@ -164,6 +169,8 @@ def main() -> int:
                 "macro_f1_std": macro.std(ddof=0),
                 "forest_f1_mean": np.nanmean(forest_f1),
                 "forest_f1_std": np.nanstd(forest_f1),
+                "plantation_f1_mean": np.nanmean(plantation_f1)
+                if not np.all(np.isnan(plantation_f1)) else np.nan,
                 "overall_acc_mean": oa.mean(),
             })
 
