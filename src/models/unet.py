@@ -338,26 +338,34 @@ def train(district: str, experiment: str, seed: int, year: int,
     return test
 
 
-def smoke_test() -> int:
+def smoke_test(patch_root: Path = PATCH_ROOT) -> int:
     """Prove the whole path runs, on real patches, on CPU.
 
     Not a result. It checks that shapes line up, the loss is finite, the
     ignore index is respected and a gradient actually flows — the things
     that otherwise fail forty minutes into a GPU session.
+
+    Takes patch_root rather than using the module default, because on
+    Kaggle the repo layout does not exist: patches live at
+    /kaggle/working/patches, not <repo>/data/patches. Ignoring the flag
+    made the smoke test fail with "no patches found" on a session where
+    the patches were plainly there — the one place a false alarm is most
+    expensive, since it is the gate everything else waits behind.
     """
     print("smoke test: CPU, real patches, 2 steps\n")
 
     district = next(
         (d for d in DISTRICTS
-         if (PATCH_ROOT / f"{d}_2024_train").exists()
-         and any((PATCH_ROOT / f"{d}_2024_train").glob("*.npz"))),
+         if (patch_root / f"{d}_2024_train").exists()
+         and any((patch_root / f"{d}_2024_train").glob("*.npz"))),
         None,
     )
     if district is None:
-        sys.exit("no patches found — run src/extract_patches.py first")
-    print(f"  district: {district}")
+        sys.exit(f"no patches found under {patch_root} — pass --patch-root, "
+                 "or run src/extract_patches.py first")
+    print(f"  district: {district}   root: {patch_root}")
 
-    files = sorted((PATCH_ROOT / f"{district}_2024_train").glob("*.npz"))[:2]
+    files = sorted((patch_root / f"{district}_2024_train").glob("*.npz"))[:2]
     xs, ys = [], []
     for f in files:
         with np.load(f) as d:
@@ -420,7 +428,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.smoke_test:
-        return smoke_test()
+        return smoke_test(args.patch_root)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device == "cpu":

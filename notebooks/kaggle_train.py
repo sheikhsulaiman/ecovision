@@ -39,6 +39,7 @@ from pathlib import Path
 import torch
 
 INPUT = Path("/kaggle/input/ecovision-patches")
+SRC_INPUT = Path("/kaggle/input/ecovision-src")   # small, re-uploadable in seconds
 WORK = Path("/kaggle/working")
 
 print("torch", torch.__version__, "| cuda", torch.cuda.is_available(),
@@ -57,6 +58,13 @@ for name in ("patches", "tables", "src"):
     if source.exists() and not target.exists():
         shutil.copytree(source, target)
 
+# The standalone code dataset wins if it is mounted. It exists so a one-line
+# fix does not cost a re-upload of 840 MB of patches over a slow connection.
+if (SRC_INPUT / "src").exists():
+    shutil.rmtree(WORK / "src", ignore_errors=True)
+    shutil.copytree(SRC_INPUT / "src", WORK / "src")
+    print("using ecovision-src (overrides the copy inside ecovision-patches)")
+
 sys.path.insert(0, str(WORK / "src"))
 
 splits = sorted(p.name for p in (WORK / "patches").iterdir() if p.is_dir())
@@ -68,8 +76,8 @@ for split in splits:
 # Runs in seconds and catches the failures that otherwise appear after an
 # hour of training: shape mismatch, all-nodata batch producing NaN loss,
 # missing normalisation statistics.
-subprocess.run([sys.executable, str(WORK / "src/models/unet.py"), "--smoke-test"],
-               check=True)
+subprocess.run([sys.executable, str(WORK / "src/models/unet.py"), "--smoke-test",
+                "--patch-root", str(WORK / "patches")], check=True)
 
 # %%
 # --- cell 4: E3 and E4 ---------------------------------------------------

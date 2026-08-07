@@ -84,6 +84,17 @@ def main() -> int:
         for path, arcname in members:
             archive.write(path, arcname)
 
+    # The code goes out a SECOND time, on its own, in a bundle small enough
+    # to re-upload in seconds. Code changes and 840 MB of patches do not,
+    # and pairing them means every one-line fix costs a full re-upload over
+    # a slow connection. The notebook prefers this copy when it is mounted.
+    source_out = OUT_DIR / "ecovision-src.zip"
+    with zipfile.ZipFile(source_out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        for relative in SOURCE_FILES:
+            path = REPO / "src" / relative
+            if path.exists():
+                archive.write(path, f"src/{relative}")
+
     by_split: dict[str, int] = {}
     for _, arcname in members:
         if arcname.startswith("patches/"):
@@ -92,9 +103,13 @@ def main() -> int:
         print(f"  {name:<24}{by_split[name]:>5} patches")
 
     print(f"\nWritten: {out.relative_to(REPO)}  ({out.stat().st_size / 1e6:.1f} MB)")
-    print("\nUpload as a Kaggle Dataset named `ecovision-patches`, then run")
-    print("notebooks/kaggle_train.py with GPU T4 x2 and internet ON (the")
-    print("notebook pip-installs segmentation-models-pytorch).")
+    print(f"Written: {source_out.relative_to(REPO)}  "
+          f"({source_out.stat().st_size / 1e3:.0f} KB)")
+    print("\nUpload BOTH as Kaggle Datasets, named `ecovision-patches` and")
+    print("`ecovision-src`, and add both to the notebook. After a code change")
+    print("only ecovision-src needs re-uploading — it takes seconds, and the")
+    print("notebook loads it in preference to the copy inside the big bundle.")
+    print("\nThen run notebooks/kaggle_train.py with GPU T4 x2 and internet ON.")
     return 0
 
 
