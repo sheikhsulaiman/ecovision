@@ -1,0 +1,50 @@
+{
+  "seed": 20260807,
+  "design": "reduced",
+  "kappa_per_district": 20,
+  "samples": {
+    "gazipur": {
+      "n": 100,
+      "n_by_stratum": {
+        "forest_loss": 40,
+        "stable_non_forest": 30,
+        "stable_forest": 30
+      },
+      "n_kappa": 18,
+      "drawn_from": "reference_sample_gazipur.csv",
+      "full_n": 500
+    },
+    "sylhet": {
+      "n": 180,
+      "n_by_stratum": {
+        "forest_loss": 72,
+        "stable_non_forest": 54,
+        "stable_forest": 54
+      },
+      "n_kappa": 18,
+      "drawn_from": "reference_sample_sylhet.csv",
+      "full_n": 500
+    },
+    "bandarban": {
+      "n": 120,
+      "n_by_stratum": {
+        "forest_loss": 33,
+        "cyclical": 33,
+        "stable_non_forest": 27,
+        "stable_forest": 27
+      },
+      "n_kappa": 20,
+      "drawn_from": "reference_sample_bandarban.csv",
+      "full_n": 550
+    },
+    "sylhet_plantation_topup": {
+      "n": 40,
+      "n_by_stratum": {
+        "plantation": 40
+      },
+      "n_kappa": 20,
+      "drawn_from": "reference_sample_sylhet_plantation_topup.csv",
+      "full_n": 100
+    }
+  }
+}

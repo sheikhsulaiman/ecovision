@@ -5,7 +5,8 @@
       "Bash(grep -vE \"^\\\\s*$\" \"C:/Users/sonye/AppData/Local/Temp/claude/d--UFTB-RubelSir-thesis-ecovision/90a34c36-c1fe-44e3-9815-d66fc23a77ae/tasks/bcyhe3cdw.output\")",
       "Bash(xargs echo \"  patches so far:\")",
       "Bash(venv/Scripts/python.exe -c ' *)",
-      "Bash(./venv/Scripts/python.exe -c ' *)"
+      "Bash(./venv/Scripts/python.exe -c ' *)",
+      "Bash(./venv/Scripts/python.exe src/subsample_reference.py --write)"
     ]
   }
 }
