@@ -76,7 +76,10 @@ def sample_split(district: str, year: int, split: str) -> pd.DataFrame:
     region = split_region(district, split)
 
     stack = pp.build_composite(aoi, year)
-    label = lb.build_labels(aoi, year).rename("label")
+    # `district` is not optional. Without it plantation_mask() never fires
+    # and every Sylhet tea pixel is labelled natural forest, so class 2
+    # silently vanishes from the RF's training data.
+    label = lb.build_labels(aoi, year, district).rename("label")
     combined = stack.addBands(label)
 
     band_names = stack.bandNames().getInfo()
@@ -151,7 +154,7 @@ def main() -> int:
     districts = [args.district] if args.district else pp.DISTRICTS
 
     print(f"year {args.year}   canopy threshold {lb.CANOPY_THRESHOLD}%   seed {SEED}")
-    print("NOTE: plantation (class 2) is never assigned — blocked on BFD.\n")
+    print("NOTE: " + lb.PLANTATION_PARTIAL + "\n")
 
     for district in districts:
         print(f"=== {district} ===")

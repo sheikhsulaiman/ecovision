@@ -183,25 +183,35 @@ def _grouped_area(image: ee.Image, aoi: ee.Geometry, scale: int):
     )
 
 
-def areas_batch(image: ee.Image, aoi: ee.Geometry, district: str) -> None:
-    """Submit the area tabulation as a batch task instead of computing it live.
+def asset_id(district: str) -> str:
+    return f"{pp.ASSET_ROOT}landtrendr_{district}"
 
-    At 30 m the interactive reduction is 37 dry-season composites over
-    4,592 km² in one synchronous request, and Earth Engine refuses it with
-    "Computed image is too large". Batch tasks have far higher limits and
-    survive this machine being switched off, which an interactive call
-    does not.
+
+def export_asset(image: ee.Image, aoi: ee.Geometry, district: str) -> None:
+    """Materialise the classified map as a GEE asset.
+
+    Tabulating areas at 30 m failed both interactively and as a batch
+    task, and coarsening the scale was not the answer — the cost is not
+    the reduction, it is that every tile of it re-runs 37 dry-season
+    composites and the segmentation behind them. Earth Engine will not
+    reuse that work across a reduceRegion.
+
+    Writing the result to an asset computes it once. Everything
+    afterwards — areas, the reference-point overlay in Phase 8, the loss
+    year map — then reads a materialised image and costs almost nothing.
     """
-    feature = ee.Feature(None, _grouped_area(image, aoi, pp.NATIVE_SCALE))
-    task = ee.batch.Export.table.toDrive(
-        collection=ee.FeatureCollection([feature]),
-        description=f"landtrendr_areas_{district}",
-        folder="ecovision",
-        fileFormat="CSV",
+    task = ee.batch.Export.image.toAsset(
+        image=image.select(["class", "magnitude", "trough_year"]).toFloat(),
+        description=f"landtrendr_asset_{district}",
+        assetId=asset_id(district),
+        region=aoi,
+        scale=pp.NATIVE_SCALE,
+        crs=pp.NATIVE_CRS,
+        maxPixels=int(1e10),
     )
     task.start()
-    print(f"Area tabulation submitted as a batch task: "
-          f"landtrendr_areas_{district} -> Drive/ecovision")
+    print(f"Asset export started: {asset_id(district)}")
+    print("When it finishes, re-run with --from-asset to tabulate areas.")
 
 
 def areas(image: ee.Image, aoi: ee.Geometry, scale: int) -> dict:
@@ -219,6 +229,10 @@ def main() -> int:
                         help="coarsen for a quick look; 90 is ~9x cheaper")
     parser.add_argument("--export", action="store_true",
                         help="start a Drive export of the classified image")
+    parser.add_argument("--to-asset", action="store_true",
+                        help="materialise the classified map as a GEE asset (do this first)")
+    parser.add_argument("--from-asset", action="store_true",
+                        help="tabulate from the materialised asset — cheap, and the only way at 30 m")
     args = parser.parse_args()
 
     try:
@@ -234,7 +248,20 @@ def main() -> int:
           f"{RECOVERY_FRACTION:.0%} within {RECOVERY_WINDOW} years, "
           f"scale {args.scale} m\n")
 
-    classified = classify(segmented(aoi)).clip(aoi)
+    if args.from_asset:
+        try:
+            classified = ee.Image(asset_id(args.district))
+            classified.bandNames().getInfo()
+        except Exception as exc:
+            sys.exit(f"Cannot read {asset_id(args.district)}: {str(exc)[:80]}\n"
+                     "Run with --to-asset first and wait for the task to finish.")
+        print(f"reading materialised asset {asset_id(args.district)}\n")
+    else:
+        classified = classify(segmented(aoi)).clip(aoi)
+
+    if args.to_asset:
+        export_asset(classified, aoi, args.district)
+        return 0
 
     if args.export:
         task = ee.batch.Export.image.toDrive(
