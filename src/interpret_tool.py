@@ -92,15 +92,21 @@ def sample_files(district: str) -> list[Path]:
     return [f for f in files if f.exists()]
 
 
-def load_points(district: str) -> pd.DataFrame:
+def load_points(district: str, author: str) -> pd.DataFrame:
+    """Every point for a district, tagged with the file its answers go back to.
+
+    Top-ups are a separate second-stage sample with their own inclusion
+    probabilities, so their interpretations cannot be merged into the main
+    file — the Olofsson weights would be wrong and nothing would say so.
+    They are rendered together because it would be absurd to make someone
+    open two pages, but the export splits them back apart, which is why
+    each point carries its destination rather than the page assuming one.
+    """
     frames = []
     for path in sample_files(district):
         frame = pd.read_csv(path)
-        # Top-ups are a separate second-stage sample with their own
-        # inclusion probabilities. They are rendered together for the
-        # interpreter's convenience and must stay separable afterwards,
-        # which the point_id prefix already guarantees.
-        frame["source_file"] = path.name
+        stem = path.stem.replace("reference_sample_", "")
+        frame["out_file"] = f"interpretation_{stem}_author_{author}.csv"
         frames.append(frame)
     return pd.concat(frames, ignore_index=True)
 
@@ -378,19 +384,28 @@ document.addEventListener("keydown",e=>{{
 }});
 
 function exportCsv(){{
+  // One file per source sample, not one merged file. A top-up is a
+  // separate second-stage sample and merging it into the main file
+  // corrupts the Olofsson weights silently.
   const head=["point_id","district","stratum","lon","lat","class_t0","class_t3","confidence","notes"];
-  const rows=[head.join(",")];
+  const groups={{}};
   for(const p of POINTS){{
-    const r=store[p.point_id]||{{}};
-    rows.push([p.point_id,p.district,p.stratum,p.lon,p.lat,
-      r.class_t0!=null?CLASSES[r.class_t0]:"",
-      r.class_t3!=null?CLASSES[r.class_t3]:"",
-      r.flag?"low":"", ""].join(","));
+    (groups[p.out_file]=groups[p.out_file]||[]).push(p);
   }}
-  const blob=new Blob([rows.join("\\n")],{{type:"text/csv"}});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="interpretation_{district}_author_{author}.csv";a.click();
+  for(const [name,points] of Object.entries(groups)){{
+    const rows=[head.join(",")];
+    for(const p of points){{
+      const r=store[p.point_id]||{{}};
+      rows.push([p.point_id,p.district,p.stratum,p.lon,p.lat,
+        r.class_t0!=null?CLASSES[r.class_t0]:"",
+        r.class_t3!=null?CLASSES[r.class_t3]:"",
+        r.flag?"low":"", ""].join(","));
+    }}
+    const blob=new Blob([rows.join("\\n")],{{type:"text/csv"}});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=name;a.click();
+  }}
 }}
 render();
 </script>
@@ -411,7 +426,7 @@ def main() -> int:
     except Exception as exc:
         sys.exit(f"Earth Engine init failed: {exc}")
 
-    points = load_points(args.district)
+    points = load_points(args.district, args.author)
     if args.limit:
         points = points.head(args.limit)
     print(f"{args.district}: {len(points):,} points from "
@@ -430,7 +445,7 @@ def main() -> int:
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out = OUT_DIR / f"{args.district}_author_{args.author}.html"
-    cols = ["point_id", "district", "stratum", "lon", "lat"]
+    cols = ["point_id", "district", "stratum", "lon", "lat", "out_file"]
     out.write_text(
         PAGE.format(
             district=args.district,
