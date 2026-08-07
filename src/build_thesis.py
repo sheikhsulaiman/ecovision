@@ -71,22 +71,25 @@ CHAPTERS = [
 # Figures placed after the section whose heading matches. Keyed on a
 # substring of the heading text so a reworded heading does not silently
 # drop the figure.
+# Keyed on (chapter number, heading cue). "Cross-sensor harmonisation"
+# heads a section in both Chapter 2 and Chapter 5; keying on the heading
+# alone placed the results figure in the literature review.
 FIGURE_PLACEMENT = {
-    "Rationale for a three-district design": (
+    (3, "Rationale for a three-district design"): (
         "study_area.png",
         "The three study districts in national context, and their extent "
         "and dominant forest-loss mechanism at a common scale."),
-    "Cross-sensor harmonisation": (
+    (5, "Cross-sensor harmonisation"): (
         "harmonisation.png",
         "Residual RMSE per band for each candidate transform. The adopted "
         "transform is marked. Roy et al. (2016) coefficients are worse "
         "than applying no correction on four of six bands."),
-    "Spatial partitioning": (
+    (5, "Spatial partitioning"): (
         "block_splits.png",
         "Spatially disjoint 10 km block assignment per district. Whole "
         "blocks are assigned to one split each, so no patch can straddle "
         "a train/test boundary."),
-    "Temporal design": (
+    (4, "Temporal design"): (
         "scene_availability.png",
         "Usable Landsat scenes per district-year. START_YEAR is fixed at "
         "1988: 1985-87 returned zero scenes in all three districts."),
@@ -299,6 +302,7 @@ def abstract_page(doc: Document) -> None:
 def render_chapter(doc: Document, path: Path, number: int,
                    title: str, counters: dict) -> None:
     doc.add_heading(f"Chapter {number}. {title}", level=1)
+    counters["chapter"] = number
 
     lines = path.read_text(encoding="utf-8").split("\n")
     i = 0
@@ -338,8 +342,9 @@ def render_chapter(doc: Document, path: Path, number: int,
             # mention harmonisation or partitioning across chapters, and
             # without this the same figure appears twice under different
             # numbers, which is worse than it appearing in the wrong place.
-            for key, (fname, caption) in FIGURE_PLACEMENT.items():
-                if key.lower() in heading.lower() and fname not in counters["placed"]:
+            for (chap, cue), (fname, caption) in FIGURE_PLACEMENT.items():
+                if (chap == counters["chapter"] and cue.lower() in heading.lower()
+                        and fname not in counters["placed"]):
                     pending_figure = (fname, caption)
                     counters["placed"].add(fname)
             i += 1
@@ -429,7 +434,7 @@ def main() -> int:
     ).runs[0].italic = True
     doc.add_page_break()
 
-    counters = {"figure": 0, "table": 0, "placed": set(), "heading": ""}
+    counters = {"figure": 0, "table": 0, "placed": set(), "heading": "", "chapter": 0}
     for number, (fname, title) in enumerate(CHAPTERS, 1):
         path = CHAPTER_DIR / fname
         if not path.exists():
