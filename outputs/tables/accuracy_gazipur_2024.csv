@@ -1,0 +1,5 @@
+class,n_map,n_reference,users_acc,producers_acc,f1
+non_forest,70,57,0.6,0.7368421052631579,0.6614173228346457
+natural_forest,30,43,0.5,0.3488372093023256,0.4109589041095891
+plantation,0,0,,,
+water,0,0,,,
