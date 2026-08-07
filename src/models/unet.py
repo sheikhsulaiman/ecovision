@@ -453,9 +453,15 @@ def main() -> int:
     print("\n" + frame.to_string(index=False, float_format=lambda v: f"{v:.4f}"))
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out = OUT_DIR / f"unet_{args.experiment}_{args.year}.csv"
+    # The district belongs in the filename. Without it, running one district
+    # per invocation — which is what the Kaggle notebook does, so each gets
+    # its own log — made every run overwrite the last, and a full three
+    # district sweep came back with a results file containing only the third.
+    # The checkpoints survived, so nothing was lost, but only by luck.
+    tag = args.district or "all"
+    out = OUT_DIR / f"unet_{args.experiment}_{tag}_{args.year}.csv"
     frame.to_csv(out, index=False)
-    with (OUT_DIR / f"unet_{args.experiment}_{args.year}_perclass.json").open("w") as fh:
+    with (OUT_DIR / f"unet_{args.experiment}_{tag}_{args.year}_perclass.json").open("w") as fh:
         json.dump(results, fh, indent=2)
     print(f"\nWritten: {out.name}")
     print("\nAccuracy here is against Hansen-derived TRAINING labels, not the")

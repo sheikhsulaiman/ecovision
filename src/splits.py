@@ -145,6 +145,62 @@ def loss_pixels_per_block(grid: gpd.GeoDataFrame, district: str) -> pd.Series:
     return pd.Series(counts, name="loss_pixels")
 
 
+def plantation_ha_per_block(grid: gpd.GeoDataFrame) -> pd.Series:
+    """Hand-digitised tea area inside each block, hectares. Sylhet only."""
+    tea_path = VECTOR_DIR / "sylhet_tea_estates.geojson"
+    if not tea_path.exists():
+        return pd.Series(0.0, index=grid.index, name="plantation_ha")
+    tea = gpd.read_file(tea_path).to_crs(grid.crs)
+    pieces = gpd.overlay(
+        grid[["block_id", "geometry"]].reset_index(names="row"),
+        tea[["geometry"]], how="intersection")
+    if pieces.empty:
+        return pd.Series(0.0, index=grid.index, name="plantation_ha")
+    pieces["ha"] = pieces.geometry.area / 1e4
+    by_row = pieces.groupby("row")["ha"].sum()
+    return by_row.reindex(grid.index).fillna(0.0).rename("plantation_ha")
+
+
+def preassign_plantation(grid: gpd.GeoDataFrame) -> dict[int, str]:
+    """Force tea into train and into test before the greedy pass runs.
+
+    WHY THIS EXISTS
+    ---------------
+    The first Sylhet split put every tea block in val and test and left
+    train with 0.24% of the plantation area. The models were then scored
+    on 11,071 tea pixels they had never been shown a single example of, so
+    plantation F1 came out 0.0000 for every architecture — arithmetically
+    guaranteed, and it made the E3/E4 texture ablation meaningless because
+    neither model had ever seen the class the ablation is about. RQ3 was
+    unanswerable and nothing in the pipeline said so.
+
+    The cause is geometry, not a bug. All 1,303 ha of tea falls in 4 of 48
+    blocks, and two of those hold 99.8% of it. With two meaningful blocks
+    a proportional 70/15/15 split of plantation is not available at 10 km,
+    so the choice is which two splits get tea.
+
+    Train and test win. Train because a class absent from training cannot
+    be learned; test because a class absent from test cannot be measured.
+    Val loses because its job is early stopping, and stopping on a class
+    that is 0.5% of pixels was never what selected the checkpoint.
+
+    LIMITATION THIS CREATES, AND IT MUST BE REPORTED
+    ------------------------------------------------
+    Sylhet's plantation test estimate then rests on ONE 10 km block. That
+    is spatial pseudo-replication: the confidence interval will understate
+    the true uncertainty, because 581 ha of one estate complex is not a
+    sample of Bangladesh's tea. Say so next to the RQ3 result rather than
+    letting the F1 stand unqualified.
+    """
+    tea = grid["plantation_ha"]
+    if tea.sum() <= 0:
+        return {}
+    ranked = tea[tea > 0].sort_values(ascending=False)
+    if len(ranked) < 2:
+        return {int(ranked.index[0]): "train"} if len(ranked) else {}
+    return {int(ranked.index[0]): "train", int(ranked.index[1]): "test"}
+
+
 def assign(grid: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Greedy assignment balancing loss pixels, then area.
 
@@ -152,6 +208,11 @@ def assign(grid: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     is furthest below its target share. Processing the rare stuff first
     matters: leaving the high-loss blocks until last would force them
     wherever there happens to be room.
+
+    Plantation blocks are pinned before any of that — see
+    preassign_plantation(). They are counted into the running totals so the
+    greedy pass compensates with the remaining blocks rather than treating
+    them as free.
     """
     grid = grid.copy()
     total_loss = grid["loss_pixels"].sum()
@@ -171,6 +232,15 @@ def assign(grid: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     got = {s: {"loss": 0.0, "area": 0.0} for s in TARGETS}
     assignment = {}
+
+    pinned = preassign_plantation(grid)
+    for idx, split in pinned.items():
+        assignment[idx] = split
+        got[split]["loss"] += grid.loc[idx, "loss_pixels"]
+        got[split]["area"] += grid.loc[idx, "area_km2"]
+        print(f"  pinned {grid.loc[idx, 'block_id']} -> {split} "
+              f"({grid.loc[idx, 'plantation_ha']:,.0f} ha plantation)")
+    order = [i for i in order if i not in pinned]
 
     for idx in order:
         block_loss = grid.loc[idx, "loss_pixels"]
@@ -272,6 +342,10 @@ def main() -> int:
         grid["loss_pixels"] = loss_pixels_per_block(grid, district).reindex(
             grid["block_id"]
         ).to_numpy()
+        grid["plantation_ha"] = (
+            plantation_ha_per_block(grid) if district in ("sylhet",)
+            else pd.Series(0.0, index=grid.index)
+        )
         grid = assign(grid)
         grids[district] = grid
 

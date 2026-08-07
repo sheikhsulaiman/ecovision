@@ -1,0 +1,49 @@
+{
+  "district": "bandarban",
+  "year": 2024,
+  "seed": 0,
+  "experiment": "E3",
+  "n_test_pixels": 1004621,
+  "scores": {
+    "RF (patch pixels)": {
+      "macro_f1": 0.4632435868366935,
+      "mean_iou": 0.35916702341935786,
+      "per_class_f1": {
+        "non_forest": 0.6110797797381612,
+        "natural_forest": 0.7786509807719191,
+        "water": 0.0
+      },
+      "overall_accuracy": 0.7178707194056266
+    },
+    "U-Net": {
+      "macro_f1": 0.4607039639915241,
+      "mean_iou": 0.3558029339616628,
+      "per_class_f1": {
+        "non_forest": 0.6108731714268046,
+        "natural_forest": 0.7712387205477677,
+        "water": 0.0
+      },
+      "overall_accuracy": 0.7118654696646796
+    },
+    "soft vote": {
+      "macro_f1": 0.46882394233568575,
+      "mean_iou": 0.3656127728593992,
+      "per_class_f1": {
+        "non_forest": 0.621720060603399,
+        "natural_forest": 0.7847517664036584,
+        "water": 0.0
+      },
+      "overall_accuracy": 0.7256258827956015
+    },
+    "E7 stacked": {
+      "macro_f1": 0.4754353078434228,
+      "mean_iou": 0.37173145296633453,
+      "per_class_f1": {
+        "non_forest": 0.6529338468652004,
+        "natural_forest": 0.7733720766650679,
+        "water": 0.0
+      },
+      "overall_accuracy": 0.7257941054387674
+    }
+  }
+}

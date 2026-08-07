@@ -1,0 +1,53 @@
+{
+  "district": "sylhet",
+  "year": 2024,
+  "seed": 0,
+  "experiment": "E3",
+  "n_test_pixels": 648476,
+  "scores": {
+    "RF (patch pixels)": {
+      "macro_f1": 0.47790887167866736,
+      "mean_iou": 0.3875514692973314,
+      "per_class_f1": {
+        "non_forest": 0.9500056585257092,
+        "natural_forest": 0.37662462166344823,
+        "plantation": 0.0,
+        "water": 0.585005206525512
+      },
+      "overall_accuracy": 0.9015075345887897
+    },
+    "U-Net": {
+      "macro_f1": 0.48366622187441066,
+      "mean_iou": 0.39065382254176045,
+      "per_class_f1": {
+        "non_forest": 0.948982463932407,
+        "natural_forest": 0.4230871826790557,
+        "plantation": 0.0,
+        "water": 0.5625952408861798
+      },
+      "overall_accuracy": 0.8942273885232452
+    },
+    "soft vote": {
+      "macro_f1": 0.4968670968653003,
+      "mean_iou": 0.405535099985319,
+      "per_class_f1": {
+        "non_forest": 0.9532330768302815,
+        "natural_forest": 0.41038941225828596,
+        "plantation": 0.0,
+        "water": 0.6238458983726337
+      },
+      "overall_accuracy": 0.9045269215822945
+    },
+    "E7 stacked": {
+      "macro_f1": 0.5016490736737246,
+      "mean_iou": 0.40953537166274145,
+      "per_class_f1": {
+        "non_forest": 0.9534128600325553,
+        "natural_forest": 0.4273426556240938,
+        "plantation": 0.0,
+        "water": 0.6258407790382492
+      },
+      "overall_accuracy": 0.9047165970675861
+    }
+  }
+}

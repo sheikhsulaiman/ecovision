@@ -366,7 +366,13 @@ function render(){{
   document.getElementById("hdr").innerHTML=
     `<b>${{p.point_id}}</b> &nbsp; stratum <b>${{p.stratum}}</b> &nbsp; `+
     `${{p.lat.toFixed(5)}}, ${{p.lon.toFixed(5)}} &nbsp; `+
-    `<a target="_blank" href="https://www.google.com/maps/@?api=1&map_action=map&center=${{p.lat}},${{p.lon}}&zoom=17&basemap=satellite">high-res \u2197</a>`+
+    // Two links, because they answer different questions. Maps is current
+    // imagery and settles T3. Earth Web has a historical slider, but over
+    // rural Bangladesh it rarely reaches back past the 2000s and never to
+    // 1990 (interpretation_protocol.md \u00a73) \u2014 for T0 the Landsat chip and
+    // the trajectory below it are the only evidence there is.
+    `<a target="_blank" href="https://www.google.com/maps/@?api=1&map_action=map&center=${{p.lat}},${{p.lon}}&zoom=17&basemap=satellite">high-res now (T3) \u2197</a> &nbsp; `+
+    `<a target="_blank" href="https://earth.google.com/web/@${{p.lat}},${{p.lon}},0a,1200d,35y,0h,0t,0r">Earth history \u2197</a>`+
     (r.flag?' &nbsp; <span style="color:#e6a45a">flagged</span>':'');
   document.getElementById("chips").innerHTML=Object.keys(EPOCHS).map(e=>
     `<div class="chip"><div class="cross">`+
@@ -479,8 +485,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--district", choices=pp.DISTRICTS, required=True)
     parser.add_argument("--author", choices=["a", "b"], required=True)
-    parser.add_argument("--trajectory", action="store_true",
-                        help="annual NDVI/NBR series — slow, and required for Bandarban (rule 9)")
+    # On by default. It began as a Bandarban-only aid for the jhum call
+    # (rule 9), but the T0 problem is not Bandarban's alone: no sub-metre
+    # imagery of rural Bangladesh exists for 1990, in Google Earth or
+    # anywhere else, so in every district the 1990 chip and this series are
+    # the whole of the evidence for the T0 call. Making it opt-in meant the
+    # default page was the weaker one.
+    parser.add_argument("--no-trajectory", dest="trajectory", action="store_false",
+                        help="skip the annual NDVI/NBR series (faster, but weakens every T0 call)")
     parser.add_argument("--limit", type=int, help="first N points only, for a quick look")
     args = parser.parse_args()
 
@@ -502,7 +514,7 @@ def main() -> int:
 
     traj = build_trajectory(args.district, points) if args.trajectory else {}
     if not args.trajectory and args.district == "bandarban":
-        print("\n  WARNING: Bandarban without --trajectory. Jhum cannot be told from\n"
+        print("\n  WARNING: Bandarban without the trajectory. Jhum cannot be told from\n"
               "  permanent conversion by a pair of dates (CLAUDE.md rule 9), so the\n"
               "  interpreter has no way to make that call from the chips alone.")
 

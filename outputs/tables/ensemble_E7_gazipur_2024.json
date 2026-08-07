@@ -1,0 +1,49 @@
+{
+  "district": "gazipur",
+  "year": 2024,
+  "seed": 0,
+  "experiment": "E3",
+  "n_test_pixels": 421999,
+  "scores": {
+    "RF (patch pixels)": {
+      "macro_f1": 0.4125248520196109,
+      "mean_iou": 0.3550747457671853,
+      "per_class_f1": {
+        "non_forest": 0.9474719442049722,
+        "natural_forest": 0.02784697275611611,
+        "water": 0.26225563909774435
+      },
+      "overall_accuracy": 0.900518721608345
+    },
+    "U-Net": {
+      "macro_f1": 0.3157475130942216,
+      "mean_iou": 0.2993942768082042,
+      "per_class_f1": {
+        "non_forest": 0.9460216592791314,
+        "natural_forest": 0.0005347736570496537,
+        "water": 0.0006861063464837049
+      },
+      "overall_accuracy": 0.8974879087391202
+    },
+    "soft vote": {
+      "macro_f1": 0.32243925012322644,
+      "mean_iou": 0.3029330035734767,
+      "per_class_f1": {
+        "non_forest": 0.94640156930711,
+        "natural_forest": 0.002835513468688976,
+        "water": 0.01808066759388039
+      },
+      "overall_accuracy": 0.8982817494828187
+    },
+    "E7 stacked": {
+      "macro_f1": 0.44433623972485886,
+      "mean_iou": 0.378263208041703,
+      "per_class_f1": {
+        "non_forest": 0.9476068144943213,
+        "natural_forest": 0.017023526301876816,
+        "water": 0.3683783783783784
+      },
+      "overall_accuracy": 0.9008173005149301
+    }
+  }
+}

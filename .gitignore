@@ -61,3 +61,8 @@ outputs/kaggle/
 # Model weights — ~90 MB each and reproducible from the patches plus a
 # fixed seed. The metrics they produce are what gets committed.
 outputs/checkpoints/
+
+# Whatever was downloaded back from a Kaggle session. It is the staged
+# copy of the inputs plus ~90 MB checkpoints; the RESULTS are copied out
+# of it into outputs/tables/, and those are what belong in git.
+outputs/kaggle-output/

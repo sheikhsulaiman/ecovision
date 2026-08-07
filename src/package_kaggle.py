@@ -49,6 +49,9 @@ FORBIDDEN = ("data/reference", "interpret_cache")
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--year", type=int, default=pp.EPOCHS["T3"])
+    parser.add_argument("--district", choices=pp.DISTRICTS,
+                        help="bundle one district only — for re-running after a "
+                             "split change without re-uploading the other two")
     args = parser.parse_args()
 
     stats = REPO / "outputs" / "tables" / f"patch_norm_stats_{args.year}.csv"
@@ -61,8 +64,10 @@ def main() -> int:
             "training and quietly inflates every score."
         )
 
+    pattern = (f"{args.district}_{args.year}_*" if args.district
+               else f"*_{args.year}_*")
     members: list[tuple[Path, str]] = []
-    for directory in sorted(PATCH_ROOT.glob(f"*_{args.year}_*")):
+    for directory in sorted(PATCH_ROOT.glob(pattern)):
         for patch in sorted(directory.glob("*.npz")):
             members.append((patch, f"patches/{directory.name}/{patch.name}"))
     if not members:
@@ -79,7 +84,8 @@ def main() -> int:
             sys.exit(f"Refusing to bundle {arcname} — rule 3")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out = OUT_DIR / "ecovision-patches.zip"
+    suffix = f"-{args.district}" if args.district else ""
+    out = OUT_DIR / f"ecovision-patches{suffix}.zip"
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         for path, arcname in members:
             archive.write(path, arcname)

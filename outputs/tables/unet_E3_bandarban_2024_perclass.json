@@ -1,0 +1,26 @@
+[
+  {
+    "per_class_iou": {
+      "non_forest": 0.43975528184007,
+      "natural_forest": 0.6276562628632584,
+      "plantation": NaN,
+      "water": 0.0
+    },
+    "per_class_f1": {
+      "non_forest": 0.6108750388163793,
+      "natural_forest": 0.7712393300525623,
+      "plantation": 0.0,
+      "water": 0.0
+    },
+    "macro_f1": 0.46070478962298056,
+    "mean_iou": 0.3558038482344428,
+    "forest_f1": 0.7712393300525623,
+    "forest_iou": 0.6276562628632584,
+    "district": "bandarban",
+    "experiment": "E3",
+    "seed": 0,
+    "year": 2024,
+    "n_bands": 23,
+    "best_val_miou": 0.3309344404137444
+  }
+]

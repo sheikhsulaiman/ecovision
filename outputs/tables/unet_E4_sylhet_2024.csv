@@ -1,0 +1,2 @@
+macro_f1,mean_iou,forest_f1,forest_iou,district,experiment,seed,year,n_bands,best_val_miou
+0.4803363367926895,0.3881675049911075,0.40061118061937395,0.250477667322017,sylhet,E4,0,2024,20,0.4222779801122951

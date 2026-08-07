@@ -182,3 +182,72 @@ thesis; a three-district study with pixel-counted areas is not.
 - [ ] Matrix copied into the thesis methods chapter
 - [ ] Patch extraction run — blocked on the canopy threshold sign-off,
       since labels depend on it
+
+---
+
+## Sylhet block split regenerated, 2026-08-07
+
+Recorded here because `data/splits/*.geojson` is committed precisely so
+the test set cannot drift, and this is a deliberate exception to that.
+**Gazipur and Bandarban were not touched** — their splits, patches and
+results from the first Kaggle run remain valid.
+
+### What was wrong
+
+The first Kaggle sweep returned **plantation F1 = 0.0000 in Sylhet for
+every architecture** — RF, U-Net, soft vote and the E7 stack alike.
+
+The cause was not the models. Sylhet's training split contained **zero
+plantation pixels**, and the models were then evaluated on 11,071 of
+them. F1 of zero was arithmetically guaranteed.
+
+The splits were built before the tea polygons existed and were balanced
+on Hansen loss and area; plantation was never a criterion. All 1,303 ha
+of hand-digitised tea falls in **4 of 48 blocks**, and two of those hold
+99.8% of it — one landed in val, the other in test, leaving train with
+3.1 ha (0.24%).
+
+The consequence was worse than a bad number. **The E3/E4 texture
+ablation was meaningless**: it compared two models neither of which had
+ever seen the class the ablation is about. RQ3 was unanswerable and
+nothing in the pipeline said so.
+
+### What changed
+
+`src/splits.py` now pins plantation blocks before the greedy pass:
+the largest goes to **train**, the second to **test**.
+
+Train because a class absent from training cannot be learned. Test
+because a class absent from test cannot be measured. Val loses, because
+its job is early stopping and a class at 0.5% of pixels was never what
+selected the checkpoint.
+
+A proportional 70/15/15 split of plantation is **not available** at 10 km
+blocks — with two meaningful blocks the only choice is which two splits
+get tea.
+
+| | before | after |
+|---|---|---|
+| train class 2 | 0 px | 2,906 px (0.108%) |
+| val class 2 | 2,906 px | 0 px |
+| test class 2 | 11,071 px | 11,071 px |
+| train loss share | 0.696 | 0.631 |
+
+Balance on Hansen loss got worse — train fell from 0.696 to 0.631 against
+a 0.70 target — because two blocks are now pinned rather than free. That
+is the price of making RQ3 answerable, and it is the right trade: loss is
+still well represented in every split, whereas plantation was not
+represented at all.
+
+### Two limitations this creates, both reportable
+
+**The plantation test estimate rests on one 10 km block.** 581 ha of a
+single estate complex is not a sample of Bangladesh's tea. This is
+spatial pseudo-replication and the interval will understate true
+uncertainty. State it next to the RQ3 result.
+
+**Training still sees only 2,906 tea pixels against 11,071 at test.** The
+class is under-represented in training by a factor of four, so a weak
+plantation F1 after this fix is evidence about *data scarcity*, not about
+whether GLCM texture separates tea from forest. Distinguish the two when
+writing the RQ3 discussion.
