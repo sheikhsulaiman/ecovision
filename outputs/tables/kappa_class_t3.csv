@@ -1,3 +1,4 @@
 district,field,n,raw_agreement,kappa,kappa_se,passes_gate_4
 gazipur,class_t3,100,0.5,0.15739804516346484,0.08426019548365352,False
 sylhet,class_t3,180,0.4388888888888889,0.03809523809523806,0.06340867539933484,False
+sylhet_plantation_topup,class_t3,40,0.3,0.06666666666666665,0.09660917830792959,False

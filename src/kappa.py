@@ -47,6 +47,15 @@ REF_DIR = REPO / "data" / "reference"
 TABLE_DIR = REPO / "outputs" / "tables"
 
 DISTRICTS = ["gazipur", "sylhet", "bandarban"]
+
+# The Sylhet plantation stratum is drawn and interpreted separately from
+# the main district sample, so its files do not follow the
+# interpretation_{district}_{author}.csv pattern and it has to be named
+# explicitly. It is reported alongside the districts rather than folded
+# into Sylhet: it is a different stratum with a different prevalence, and
+# averaging the two would hide that agreement on tea is worse than
+# agreement on everything else.
+SUBSETS = ["sylhet_plantation_topup"]
 # Must match AUTHORS in src/reference_sample.py — these are the filenames
 # that script writes.
 AUTHOR_A, AUTHOR_B = "author_a", "author_b"
@@ -134,11 +143,11 @@ def load_pair(district: str, field: str) -> pd.DataFrame | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--district", choices=DISTRICTS)
+    parser.add_argument("--district", choices=DISTRICTS + SUBSETS)
     parser.add_argument("--field", choices=COMPARABLE_FIELDS, default="class_t3")
     args = parser.parse_args()
 
-    districts = [args.district] if args.district else DISTRICTS
+    districts = [args.district] if args.district else DISTRICTS + SUBSETS
     results, any_data = [], False
 
     print(f"Cohen's kappa on {args.field}, Gate 4 threshold {GATE_4_THRESHOLD}\n")
