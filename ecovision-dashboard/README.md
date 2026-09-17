@@ -1,0 +1,65 @@
+# ecovision-dashboard
+
+Public-facing site for the EcoVision thesis: forest cover change in Gazipur,
+Sylhet and Bandarban districts, Bangladesh, measured from Landsat, 1988–2024.
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # -> dist/
+npm run preview  # serve the build
+```
+
+## Why this is not an Earth Engine app
+
+Earth Engine cannot run in a static site for public visitors. The options are:
+
+1. **Client-side `ee` with OAuth** — every visitor needs their own Earth Engine
+   account. Useless for examiners and the public.
+2. **A backend proxy holding a service-account key** — works publicly, but needs
+   a server rather than static hosting, a secret that can never enter this repo
+   or the bundle, and it spends your EE quota on every visitor's clicks.
+3. **Precomputed and static** — what this is.
+
+So the split is: **this site owns the design, the findings and the district
+maps; the live arbitrary-pixel trajectory stays in the Earth Engine App**
+(`gee/07_dashboard.js` in the parent repo), which is free to host and already
+built. Set `LINKS.earthEngineApp` once you publish it and the "Interactive map"
+card starts pointing at it.
+
+## Where the numbers come from
+
+`src/data/findings.ts` is the single source for every figure on the page. All of
+it is read out of the thesis pipeline's own outputs — `outputs/tables/*.csv` and
+the chapters in `docs/thesis/` — not typed from memory. When the pipeline is
+rerun, that file is what changes.
+
+**Reference-based figures are provisional.** Inter-interpreter agreement failed
+its threshold (κ 0.157 Gazipur, 0.038 Sylhet, 0.067 on the plantation stratum,
+against 0.75). The site says so directly under the masthead. Do not remove that
+notice to make the page look tidier — it is the most important caveat in the
+project.
+
+## Three links to fill in
+
+`LINKS` at the foot of `src/data/findings.ts` is empty on purpose. Until each is
+set, that card renders with an amber "set X in findings.ts" note rather than a
+dead link:
+
+- `earthEngineApp` — after Apps > Publish app in the Code Editor
+- `thesisPdf` — after compiling the Overleaf project
+- `repository` — the GitHub URL (the repo is currently private)
+
+## Notes
+
+- **Basemap** is Esri World Imagery, which needs no API key. CARTO's basemaps
+  now do, and they fail *silently* — the tiles render with "API KEY REQUIRED"
+  stamped across them rather than erroring.
+- **District boundaries** are simplified to 0.002° (~200 m) for the web, cutting
+  2 MB of GeoJSON to 41 KB. Areas and confidence intervals come from the
+  Olofsson estimator at the native 30 m, never from these outlines.
+- **Deployment**: `base: "./"` in `vite.config.ts` means `dist/` works from a
+  subdirectory, which is what GitHub Pages project sites serve from.
+- `npm audit` reports an esbuild dev-server advisory. It affects `npm run dev`
+  only, not the built site, and the fix is a breaking Vite major. Left alone
+  deliberately.

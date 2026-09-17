@@ -1,0 +1,664 @@
+<title>EcoVision Bangladesh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+
+<style>
+  /* Complete light palette. Neutrals carry a slight cool bias toward the
+     SWIR-water blue of a Landsat composite rather than sitting at pure grey. */
+  :root {
+    --paper:      #f4f6f8;
+    --surface:    #ffffff;
+    --sunk:       #eaeef2;
+    --ink:        #11161c;
+    --ink-soft:   #48555f;
+    --ink-faint:  #75838d;
+    --rule:       #d5dde4;
+    --rule-soft:  #e4eaef;
+
+    /* Carried from the thesis figures so page and plots read as one system. */
+    --loss:       #c33c54;
+    --loss-soft:  #fbeaed;
+    --recover:    #2f6f4f;
+    --recover-soft:#e6f0ea;
+    --caution:    #b8860b;
+    --caution-soft:#fbf3de;
+
+    --measure: 66ch;
+    --step--1: clamp(0.78rem, 0.76rem + 0.1vw, 0.84rem);
+    --step-0:  clamp(1rem, 0.97rem + 0.15vw, 1.08rem);
+    --step-1:  clamp(1.2rem, 1.12rem + 0.4vw, 1.45rem);
+    --step-2:  clamp(1.5rem, 1.35rem + 0.75vw, 2rem);
+    --step-3:  clamp(2rem, 1.7rem + 1.5vw, 3.1rem);
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif: "IBM Plex Serif", ui-serif, Georgia, "Times New Roman", serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0d1217;
+      --surface:    #141b22;
+      --sunk:       #101820;
+      --ink:        #e7edf2;
+      --ink-soft:   #9fb0bd;
+      --ink-faint:  #71838f;
+      --rule:       #263440;
+      --rule-soft:  #1c2833;
+      --loss:       #e8798c;
+      --loss-soft:  #2b161c;
+      --recover:    #6fb68e;
+      --recover-soft:#14241c;
+      --caution:    #d7a93f;
+      --caution-soft:#251d0e;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0d1217;
+    --surface:    #141b22;
+    --sunk:       #101820;
+    --ink:        #e7edf2;
+    --ink-soft:   #9fb0bd;
+    --ink-faint:  #71838f;
+    --rule:       #263440;
+    --rule-soft:  #1c2833;
+    --loss:       #e8798c;
+    --loss-soft:  #2b161c;
+    --recover:    #6fb68e;
+    --recover-soft:#14241c;
+    --caution:    #d7a93f;
+    --caution-soft:#251d0e;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: max(20px, 4vw);
+    padding-block: 0;
+  }
+
+  p, li { max-width: var(--measure); }
+
+  h1, h2, h3 {
+    font-family: var(--serif);
+    text-wrap: balance;
+    line-height: 1.15;
+    margin: 0;
+  }
+
+  a { color: inherit; text-decoration-color: var(--loss); text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--loss);
+    outline-offset: 3px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    padding-block: clamp(2.5rem, 7vw, 4.5rem) clamp(2rem, 5vw, 3rem);
+  }
+  .masthead h1 {
+    font-size: var(--step-3);
+    font-weight: 600;
+    margin-block: 0.6rem 1.1rem;
+  }
+  .standfirst {
+    font-family: var(--serif);
+    font-size: var(--step-1);
+    line-height: 1.45;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  .byline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.6rem;
+    margin-top: 2rem;
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    font-family: var(--mono);
+  }
+
+  /* ---------- provisional notice ---------- */
+
+  .notice {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 1rem;
+    align-items: start;
+    background: var(--caution-soft);
+    border-top: 2px solid var(--caution);
+    padding: 1.1rem 1.25rem;
+    margin-block: 2.5rem 0;
+  }
+  .notice .tag {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--caution);
+    white-space: nowrap;
+  }
+  .notice p { margin: 0; font-size: var(--step--1); color: var(--ink-soft); line-height: 1.55; max-width: none; }
+
+  /* ---------- sections ---------- */
+
+  section { padding-block: clamp(3rem, 7vw, 5rem); border-bottom: 1px solid var(--rule-soft); }
+  section > .eyebrow { margin-bottom: 0.8rem; }
+  section h2 { font-size: var(--step-2); font-weight: 600; margin-bottom: 1.2rem; }
+  section h3 { font-size: var(--step-1); font-weight: 600; margin-block: 2.2rem 0.6rem; }
+
+  /* ---------- the three mechanisms ---------- */
+
+  .mechanisms {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 2rem;
+  }
+  .mech { background: var(--surface); padding: 1.5rem 1.4rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .mech .district { font-family: var(--serif); font-size: var(--step-1); font-weight: 600; }
+  .mech .area { font-family: var(--mono); font-size: var(--step--1); color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .mech .signal {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .mech p { font-size: var(--step--1); color: var(--ink-soft); margin: 0; line-height: 1.55; }
+  .mech.spectral .signal { color: var(--caution); }
+  .mech.spatial  .signal { color: var(--recover); }
+  .mech.temporal .signal { color: var(--loss); }
+
+  /* ---------- figures ---------- */
+
+  figure { margin: 2.2rem 0 0; }
+  figure img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    background: #ffffff;
+    border: 1px solid var(--rule);
+  }
+  figcaption {
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    margin-top: 0.7rem;
+    line-height: 1.55;
+    max-width: var(--measure);
+  }
+  figcaption b { color: var(--ink-soft); font-weight: 600; }
+
+  /* ---------- tables ---------- */
+
+  .scroll { overflow-x: auto; margin-top: 1.6rem; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 30rem;
+    font-size: var(--step--1);
+  }
+  caption {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding-bottom: 0.6rem;
+  }
+  th, td { text-align: left; padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid var(--rule-soft); }
+  thead th {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+  td.num, th.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.win { color: var(--recover); font-weight: 600; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .flag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.1rem 0.45rem;
+    border: 1px solid currentColor;
+  }
+  .flag.no { color: var(--loss); }
+  .flag.yes { color: var(--recover); }
+
+  /* ---------- the headline result ---------- */
+
+  .headline {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--loss);
+    padding: clamp(1.5rem, 4vw, 2.4rem);
+    margin-top: 2rem;
+  }
+  .bignum {
+    font-family: var(--mono);
+    font-size: clamp(2.6rem, 8vw, 4.2rem);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--loss);
+    font-variant-numeric: tabular-nums;
+  }
+  .headline .unit { font-size: var(--step-0); color: var(--ink-soft); font-family: var(--mono); }
+  .headline p { margin-block: 1rem 0; }
+
+  .split { display: flex; height: 2.4rem; margin-top: 1.6rem; border: 1px solid var(--rule); }
+  .split span { display: grid; place-items: center; font-family: var(--mono); font-size: 0.72rem; overflow: hidden; }
+  .split .s-perm { background: var(--loss); color: #fff; }
+  .split .s-cyc  { background: var(--recover); color: #fff; }
+  .split .s-und  { background: var(--sunk); color: var(--ink-faint); }
+  .splitkey { display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; margin-top: 0.7rem; font-family: var(--mono); font-size: var(--step--1); color: var(--ink-faint); }
+
+  /* ---------- negative results ---------- */
+
+  .negatives { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-top: 2rem; }
+  .neg { background: var(--surface); padding: 1.3rem 1.4rem; display: grid; grid-template-columns: 5.5rem 1fr; gap: 0 1.3rem; align-items: baseline; }
+  .neg .val { font-family: var(--mono); font-weight: 600; color: var(--loss); font-variant-numeric: tabular-nums; }
+  .neg p { margin: 0; font-size: var(--step--1); color: var(--ink-soft); line-height: 1.55; }
+  .neg b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- links out ---------- */
+
+  .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-top: 2rem; }
+  .link { background: var(--surface); padding: 1.4rem; display: flex; flex-direction: column; gap: 0.35rem; text-decoration: none; }
+  .link:hover { background: var(--sunk); }
+  .link .what { font-family: var(--serif); font-size: var(--step-1); font-weight: 600; }
+  .link .desc { font-size: var(--step--1); color: var(--ink-soft); line-height: 1.5; }
+  .link .todo { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--caution); }
+
+  footer { padding-block: 3rem 4rem; font-size: var(--step--1); color: var(--ink-faint); }
+  footer p { margin-block: 0 0.4rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Undergraduate thesis · Remote sensing · 1988–2024</p>
+    <h1>Most of what looks like deforestation in the Chittagong Hills is not deforestation.</h1>
+    <p class="standfirst">
+      We measured forest cover change across three districts of Bangladesh using
+      Landsat, and compared classical machine learning against deep learning at
+      each one. <strong>No single method won everywhere.</strong> Which method
+      works depends on whether the thing you are trying to see is spectral,
+      spatial, or temporal — and in Bandarban, it is temporal, which is why the
+      standard approach reports roughly four times the forest loss that actually
+      occurred.
+    </p>
+    <div class="byline">
+      <span>Sheikh Sulaiman Sony</span>
+      <span>Jalal Uddin Mohammad Akbar</span>
+      <span>Dept. of Educational Technology &amp; Engineering, UFTB</span>
+    </div>
+  </header>
+
+  <div class="notice">
+    <span class="tag">Provisional</span>
+    <p>
+      Every figure on this page derived from the reference sample is provisional.
+      Two trained interpreters working from the same written protocol agreed at
+      close to chance on where forest begins (Cohen's κ of 0.157 and 0.038 against
+      a 0.75 threshold). Until that is reconciled these numbers are indicative,
+      not final. We report them anyway, because an unreported κ is
+      indistinguishable from an unmeasured one.
+    </p>
+  </div>
+
+  <section>
+    <p class="eyebrow">The design</p>
+    <h2>Three districts, chosen because forest is lost three different ways</h2>
+    <p>
+      Most method comparisons hold the landscape constant and vary the model.
+      This one varies both. Each district contributes a different loss mechanism,
+      which is what makes the interaction between the structure of a land-cover
+      class and the capability of a model visible at all.
+    </p>
+
+    <div class="mechanisms">
+      <div class="mech spectral">
+        <span class="district">Gazipur</span>
+        <span class="area">1,819 km²</span>
+        <span class="signal">Spectral</span>
+        <p>Abrupt, permanent conversion as Dhaka expands north. Cleared land looks
+           different from forest, and stays different. The easy case.</p>
+      </div>
+      <div class="mech spatial">
+        <span class="district">Sylhet</span>
+        <span class="area">3,416 km²</span>
+        <span class="signal">Spatial</span>
+        <p>Tea estates are as green and as dense as natural forest. What separates
+           them is pattern — planted rows, uniform canopy, geometric edges — not colour.</p>
+      </div>
+      <div class="mech temporal">
+        <span class="district">Bandarban</span>
+        <span class="area">4,592 km²</span>
+        <span class="signal">Temporal</span>
+        <p>Shifting cultivation (<i>jhum</i>): clear, crop, abandon, regrow, repeat on a
+           five-to-seven year cycle. Any single pair of dates catches it mid-cycle
+           and calls it something it is not.</p>
+      </div>
+    </div>
+
+    <figure>
+      <img src="figures/study_area.png" alt="Map of Bangladesh showing the locations of Gazipur, Sylhet and Bandarban districts, with each district also drawn at a common scale for comparison.">
+      <figcaption>The three study districts in national context, drawn at a common
+        scale. Total study area 9,827 km², about 10.9 million Landsat pixels at 30 m.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">The main result</p>
+    <h2>Of 88,122 ha disturbed in Bandarban, only a sixth is permanent</h2>
+    <p>
+      A two-date comparison cannot tell a cleared <i>jhum</i> plot from a
+      permanently converted one. It scores the same ground as loss, as gain, or as
+      no change depending only on where the two dates happen to fall in the cycle.
+      Fitting a trajectory to the full annual series instead — thirty-seven
+      dry-season composites, 1988 to 2024 — separates the two, because only the
+      trajectory shows whether the canopy came back.
+    </p>
+
+    <div class="headline">
+      <div class="bignum">16.4<span class="unit">%</span></div>
+      <p>
+        of disturbed land in Bandarban is permanent conversion. The remaining
+        63.8% is cyclical <i>jhum</i> that regrows, and 19.8% is undetermined
+        because it happened too close to the end of the series to judge recovery.
+        <b>A bitemporal comparison would have reported roughly four times the
+        deforestation that occurred.</b>
+      </p>
+      <div class="split" role="img" aria-label="Of disturbed land: 16.4 percent permanent conversion, 63.8 percent cyclical jhum, 19.8 percent undetermined.">
+        <span class="s-perm" style="flex: 16.4">16.4%</span>
+        <span class="s-cyc"  style="flex: 63.8">63.8%</span>
+        <span class="s-und"  style="flex: 19.8">19.8%</span>
+      </div>
+      <div class="splitkey">
+        <span>Permanent conversion · 14,457 ha</span>
+        <span>Cyclical jhum · 56,235 ha</span>
+        <span>Undetermined · 17,431 ha</span>
+      </div>
+    </div>
+
+    <figure>
+      <img src="figures/bandarban_jhum_map.png" alt="Classified map of Bandarban district. Cyclical jhum disturbance appears in green, concentrated in the western hills; permanent conversion appears sparsely in red; most of the district is stable.">
+      <figcaption>Disturbance classified from the annual NBR trajectory. Green is
+        cyclical <i>jhum</i>, red is permanent conversion. <b>Displayed at 100 m by
+        majority class; the areas quoted are tabulated at the native 30 m</b> — patches
+        smaller than a display cell are generalised away, so the map shows where each
+        class occurs, not how much.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">Model comparison</p>
+    <h2>The best model changes with the district, and it tracks training data</h2>
+    <p>
+      Random Forest, a U-Net, and a stacked ensemble of the two, scored on
+      spatially disjoint test blocks. The ordering follows training-set size
+      exactly: Random Forest wins decisively where data is scarce, loses where
+      there is enough to fit a deep model, and ties in between.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <caption>Patch-test macro F1, against Hansen-derived training labels</caption>
+        <thead>
+          <tr>
+            <th scope="col">District</th>
+            <th scope="col" class="num">Random Forest</th>
+            <th scope="col" class="num">U-Net</th>
+            <th scope="col" class="num">Ensemble</th>
+            <th scope="col" class="num">Training patches</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Gazipur</th><td class="num">0.4125</td><td class="num">0.3157</td><td class="num win">0.4443</td><td class="num">55</td></tr>
+          <tr><th scope="row">Sylhet</th><td class="num">0.5028</td><td class="num win">0.5895</td><td class="num">0.5187</td><td class="num">167</td></tr>
+          <tr><th scope="row">Bandarban</th><td class="num">0.4632</td><td class="num">0.4607</td><td class="num win">0.4754</td><td class="num">260</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Texture is what makes tea visible, and only to a model that can see shape</h3>
+    <p>
+      Holding the architecture and the data constant and switching only the three
+      GLCM texture bands in and out moves plantation F1 by +0.0824, a 22% relative
+      gain — and the improvement is almost entirely confined to that one class.
+      Random Forest, working pixel by pixel, scores 0.0286 on the same class. It
+      has no access to the planted rows and uniform canopy that define a tea
+      estate, because those are properties of a neighbourhood, not a pixel.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <caption>Sylhet per-class F1 — texture ablation</caption>
+        <thead>
+          <tr>
+            <th scope="col">Run</th>
+            <th scope="col" class="num">Non-forest</th>
+            <th scope="col" class="num">Natural forest</th>
+            <th scope="col" class="num">Plantation</th>
+            <th scope="col" class="num">Water</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">U-Net, 23 bands (with texture)</th><td class="num">0.9389</td><td class="num">0.3163</td><td class="num win">0.4520</td><td class="num">0.6508</td></tr>
+          <tr><th scope="row">U-Net, 20 bands (no texture)</th><td class="num">0.9368</td><td class="num">0.3172</td><td class="num">0.3696</td><td class="num">0.6244</td></tr>
+          <tr><th scope="row">Random Forest (per-pixel)</th><td class="num">—</td><td class="num">—</td><td class="num">0.0286</td><td class="num">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Area estimation</p>
+    <h2>Two of three districts show no statistically detectable loss</h2>
+    <p>
+      Areas are reported through the Olofsson stratified estimator with 95%
+      confidence intervals, never as raw pixel counts. The reference sample was
+      reduced from a planned 1,650 points to 400 under schedule pressure, and the
+      cost of that reduction is visible in the intervals rather than hidden: with
+      two and seven reference change points respectively, Gazipur and Sylhet
+      cannot resolve loss from zero.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <caption>Adjusted forest loss, 1990–2024</caption>
+        <thead>
+          <tr>
+            <th scope="col">District</th>
+            <th scope="col" class="num">Adjusted loss</th>
+            <th scope="col" class="num">Reference change points</th>
+            <th scope="col">Excludes zero</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Gazipur</th><td class="num">443 ± 849 ha</td><td class="num">2</td><td><span class="flag no">No</span></td></tr>
+          <tr><th scope="row">Sylhet</th><td class="num">5,547 ± 10,755 ha</td><td class="num">7</td><td><span class="flag no">No</span></td></tr>
+          <tr><th scope="row">Bandarban</th><td class="num">71,011 ± 41,629 ha</td><td class="num">18</td><td><span class="flag yes">Yes</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure>
+      <img src="figures/adjusted_loss.png" alt="Horizontal interval plot of adjusted forest loss for the three districts. Gazipur and Sylhet straddle the zero line; Bandarban's interval sits entirely above it.">
+      <figcaption>Adjusted loss with 95% confidence intervals against a dashed zero
+        line. Only Bandarban's interval clears it.</figcaption>
+    </figure>
+
+    <p>
+      One further result came out of the over-sampled loss stratum and is arguably
+      more interesting than the loss figure itself: Gazipur drew 40 points from
+      it, and the interpreter judged only <b>2</b> to be genuine forest-to-non-forest
+      transitions. That is a direct measurement of commission error in the global
+      product used to train the classifiers.
+    </p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Negative results</p>
+    <h2>What did not work, reported at the same volume as what did</h2>
+    <p>
+      Mapping tea plantation in Bangladesh is not merely difficult; on the evidence
+      here it is currently unsolved. Five independent measurements point the same
+      way, and each one is a method that was tried properly and failed.
+    </p>
+
+    <div class="negatives">
+      <div class="neg">
+        <span class="val">83%</span>
+        <p><b>Manual digitising was wrong at sub-metre resolution.</b> A polygon drawn
+           as 1,906 ha of tea turned out to be roughly 1,600 ha of hill forest. It was
+           corrected to 321 ha, and only because somebody independently checked it.</p>
+      </div>
+      <div class="neg">
+        <span class="val">1 / 19</span>
+        <p><b>No open dataset locates these estates.</b> The global planted-trees
+           database carried no Bangladesh layer in the version tested. OpenStreetMap
+           has one usable polygon district-wide. Public gazetteers resolve one estate
+           in nineteen under strict name matching.</p>
+      </div>
+      <div class="neg">
+        <span class="val">p = 0.55</span>
+        <p><b>A purpose-built row detector found nothing.</b> An FFT periodicity and
+           Hough line detector, designed to catch the planted-row signature, returned
+           4.36 for forest against 4.27 for tea. No separation.</p>
+      </div>
+      <div class="neg">
+        <span class="val">κ 0.067</span>
+        <p><b>Two trained people could not agree on what tea looks like.</b> On 40
+           points drawn deliberately inside the tea-growing upazilas, the two
+           interpreters agreed on 12. One called 25 of them plantation; the other
+           called 14, and called 20 of them natural forest.</p>
+      </div>
+      <div class="neg">
+        <span class="val">1,303 ha</span>
+        <p><b>The layer we did draw is incomplete, and we bound it.</b> Against a
+           district total reported in excess of 10,000 ha. Tea outside those polygons
+           is labelled natural forest, so the Sylhet confusion is reduced rather than
+           eliminated.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:2rem">
+      Because of the fourth of those, the plantation stratum is reported as
+      <b>not usable for validation</b>. A reference sample whose interpreters agree at
+      chance is not an independent yardstick, and scoring against it would present a
+      disagreement as a measurement.
+    </p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Method</p>
+    <h2>Measured rather than assumed</h2>
+    <p>
+      Landsat Collection 2 Level-2 surface reflectance, dry season only
+      (1 November – 31 March), cloud and shadow masked, median reduced into a
+      23-band stack. Train/validation/test splits are whole disjoint 10 km blocks,
+      never random pixels, because random splitting on spatially autocorrelated
+      data inflates accuracy silently.
+    </p>
+    <p>
+      Two standard practices were tested rather than adopted on authority, and one
+      of them failed. Published cross-sensor harmonisation coefficients, fitted over
+      the continental United States, performed <b>worse here than applying no
+      correction at all</b> (held-out residual 0.0168 against 0.0158 raw). They would
+      have degraded NIR by 8.5% and SWIR2 by 69.8% — the two bands NBR is built
+      from, and NBR is what the entire Bandarban result depends on. Locally fitted
+      coefficients were adopted per band instead.
+    </p>
+
+    <figure>
+      <img src="figures/harmonisation.png" alt="Grouped bar chart of residual RMSE per spectral band for four candidate transforms, with the adopted transform marked for each band.">
+      <figcaption>Residual RMSE per band for each candidate transform, adopted choice
+        marked. The published coefficients are beaten by the raw data on four of six bands.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="figures/scene_availability.png" alt="Heatmap of usable Landsat scenes per district per year from 1985 to 2024, showing zero coverage before 1988 and the Landsat 7 scan-line failure in 2012 and 2013.">
+      <figcaption>Usable scenes per district-year. The study starts in <b>1988</b>
+        because 1985–87 returned zero scenes across all three districts — an
+        acquisition gap, not cloud. 2012 and 2013 are entirely Landsat 7 SLC-off, so
+        neither can serve as an epoch anchor.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">Explore</p>
+    <h2>The data, the code, and the interactive map</h2>
+
+    <div class="links">
+      <a class="link" href="#" id="dashboard-link">
+        <span class="what">Interactive dashboard</span>
+        <span class="desc">Every epoch as a layer, NDVI change, and the annual
+          trajectory at any pixel you click. Built as an Earth Engine App.</span>
+        <span class="todo">Replace href once published</span>
+      </a>
+      <a class="link" href="#" id="thesis-link">
+        <span class="what">Full thesis</span>
+        <span class="desc">Seven chapters: study area, data, methodology, results
+          and discussion, with the complete accuracy assessment.</span>
+        <span class="todo">Add PDF link</span>
+      </a>
+      <a class="link" href="#" id="repo-link">
+        <span class="what">Code and data</span>
+        <span class="desc">Earth Engine scripts, the preprocessing and modelling
+          pipeline, the reference sample, and every figure on this page.</span>
+        <span class="todo">Add repository link</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <p>EcoVision — deep learning for deforestation detection in Bangladesh.</p>
+    <p>Sheikh Sulaiman Sony and Jalal Uddin Mohammad Akbar, supervised by Rubel Sheikh.</p>
+    <p>Department of Educational Technology and Engineering, University of Frontier Technology, Bangladesh.</p>
+    <p style="margin-top:1rem">Imagery: Landsat Collection 2 via Google Earth Engine, courtesy of the U.S. Geological Survey.</p>
+  </footer>
+
+</div>
