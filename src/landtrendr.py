@@ -208,6 +208,16 @@ def export_asset(image: ee.Image, aoi: ee.Geometry, district: str) -> None:
         scale=pp.NATIVE_SCALE,
         crs=pp.NATIVE_CRS,
         maxPixels=int(1e10),
+        # `class` and `trough_year` are categorical. Without this, Earth
+        # Engine builds their overviews by averaging, and every view below
+        # native scale is then wrong in a way that looks like data: a cell
+        # half stable (0) and half cyclical (2) averages to 1, which reads
+        # as permanent conversion. The tabulated areas are unaffected
+        # because they are computed at native scale, but any map drawn
+        # from the averaged overviews contradicts them. Seen in practice —
+        # see src/figures.py fig_bandarban_jhum_map.
+        pyramidingPolicy={"class": "mode", "trough_year": "mode",
+                          "magnitude": "mean"},
     )
     task.start()
     print(f"Asset export started: {asset_id(district)}")
