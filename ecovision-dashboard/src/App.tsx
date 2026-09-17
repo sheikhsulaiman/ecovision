@@ -1,4 +1,5 @@
 import MapExplorer from "./components/MapExplorer";
+import TrajectoryExplorer from "./components/TrajectoryExplorer";
 import {
   CHANGE_DETECTION,
   DISTRICTS,
@@ -156,6 +157,31 @@ export default function App() {
             <span>Undetermined · 17,431 ha</span>
           </div>
         </div>
+
+        <h3>What that looks like at a single pixel</h3>
+        <p>
+          Pick a location on the map. Each marker is a real 30 m pixel, sampled
+          from the same dry-season composites the thesis is built on, and the
+          chart is its whole annual record — no smoothing, no fitted line. The
+          shape is the argument: a sawtooth is <i>jhum</i>, a step down that
+          never returns is deforestation, and no pair of dates can tell them
+          apart.
+        </p>
+        <TrajectoryExplorer />
+        <p
+          style={{
+            fontSize: "var(--step--1)",
+            color: "var(--ink-faint)",
+            marginTop: "0.9rem",
+          }}
+        >
+          These are raw annual observations at one pixel, so they carry real
+          year-to-year noise from residual cloud, viewing geometry and
+          cross-sensor differences. The classification does not read these
+          values directly — it fits a trajectory through them, which is what
+          makes the distinction robust. Locations were drawn from the classified
+          output by class, then the clearest examples of each kept.
+        </p>
 
         <figure>
           <img
