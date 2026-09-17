@@ -183,15 +183,48 @@ Update this section as phases complete — Claude Code should read it
 at the start of every session to know what's already done and what's
 next, rather than re-deriving it from scratch each time.
 
+**Audited against the repo on 2026-09-17** and substantially rewritten.
+It had drifted badly: Phases 7 and 8 were marked not-started while their
+results were already written into the thesis, and Phase 4 was marked
+"nothing drawn" with 400 interpreted points sitting in
+`data/reference/`. If this section and the files disagree again, the
+files are right.
+
+**The short version.** Phases 0–8 are done, and **Gates 1 and 2 were
+signed off on 2026-09-17**. What actually remains:
+1. RQ3 has no independent validation, deliberately. The 40-point Sylhet
+   plantation stratum was interpreted by both authors on 2026-09-17 and
+   the two agreed at chance (kappa 0.067), so it is reported as unusable
+   for validation rather than used. Decided 2026-09-17; do not quietly
+   revive it as a validation source.
+2. κ fails Gate 4 in both districts measured (0.157, 0.038 against a
+   0.75 threshold); reconciliation, then recompute everything
+   reference-based downstream. **This is a measurement failure, not a
+   paperwork one — signing it off is not available as an option.**
+3. `outputs/maps/` is still empty (no GeoTIFF was pulled down), but the
+   thesis now has its map: `bandarban_jhum_map.png`, rendered from the
+   committed `landtrendr_bandarban` asset and placed in ch6 section 6.5.
+4. The dashboard is written (`gee/07_dashboard.js`) but **not yet
+   published** — paste into the GEE Code Editor and publish the app.
+5. The thesis has never been compiled to PDF. The authors compile the
+   Overleaf zip themselves; no local LaTeX toolchain is installed and
+   none is wanted.
+6. Reference list is populated by `
+ocite{*}` rather than real
+   `\cite{}` commands, so there are no numbered in-text citations. Fine
+   for an author-year thesis; revisit only if IEEE numbering is wanted.
+
 - [x] Phase 0 — repo scaffolded, BFD request letter sent, GitHub repo
       created (private, `sheikhsulaiman/ecovision`)
-- [~] Phase 1 — **partially done.** AOI boundaries built by
-      `src/prepare_aoi.py`, verified against published areas, and
+- [x] Phase 1 — **done, Gate 1 signed off 2026-09-17.** AOI boundaries
+      built by `src/prepare_aoi.py`, verified against published areas, and
       uploaded as GEE assets under `projects/ecovision-503602/assets/`.
-      Class scheme fixed. **Blocked on:** supervisor sign-off of
-      `docs/forest_definition.md` §7. Do not start Phase 4 labelling
-      until that is signed.
-- [~] Phase 2 — **audit complete, 120/120 district-years, zero failures.**
+      Class scheme fixed. `docs/forest_definition.md` is now
+      `status: SIGNED OFF` at version 1.0.
+      The definition is fixed from here: changing it invalidates the
+      reference sample and every area estimate built on it, so any change
+      needs a new version and a re-run, not an edit in place.
+- [x] Phase 2 — **audit complete, 120/120 district-years, zero failures.**
       Results and Gate 2 decisions: `docs/phase2_audit.md`.
       **START_YEAR = 1988** (1985–87 have zero scenes in all three
       districts — an acquisition gap, not cloud). Epoch anchors
@@ -200,32 +233,47 @@ next, rather than re-deriving it from scratch each time.
       T0 is one half of every bitemporal comparison. The annual series
       for LandTrendr still starts at 1988. Bandarban's LandTrendr
       condition is **met** (longest gap 1 year, 1991).
-      **Blocked on:** supervisor confirmation of START_YEAR and anchors.
+      **Gate 2 confirmed 2026-09-17** — START_YEAR and the epoch anchors
+      are final; `docs/phase2_audit.md` is closed.
       Keep `START_YEAR` a named constant regardless — do not inline 1988.
       **Phase 3 constraint found:** the 2012 and 2013 dry seasons are
       100% Landsat 7 SLC-off in all three districts (L5 retired, L8 not
       yet delivering). Neither may be an epoch anchor, and residual gap
       fraction must be reported for both.
-- [~] Phase 3 — preprocessing primitives written and verified
+- [x] Phase 3 — **done.** Preprocessing primitives written and verified
       (`src/preprocess.py`, 23-band stack, rule 6 check passing).
       Cross-sensor harmonisation resolved empirically: locally fitted
       coefficients replace Roy et al. on blue/red, Roy retained on green,
       local RMA on swir1, and **NIR and SWIR2 are left untransformed** —
       Roy's published values made both worse, and NBR is built from them.
       TM needs no transform (measured, not assumed). See
-      `docs/phase3_harmonisation.md`. **Not done:** epoch composites, held
-      until Gate 1 and Gate 2 are signed.
-- [~] Phase 4 — machinery written, nothing drawn.
-      `src/reference_sample.py` (`--dry-run` is the default and must stay
-      so until the canopy threshold is signed) and `src/labels.py`.
+      `docs/phase3_harmonisation.md`. Epoch composites are built in GEE
+      and everything downstream runs on them; they were never exported as
+      local rasters, which is by design — `data/raw/` holds only the audit
+      and the boundaries.
+- [x] Phase 4 — **done, with one stratum outstanding.** Reference sample
+      drawn and interpreted: 400 points under the reduced design
+      (Gazipur 100, Sylhet 180, Bandarban 120), in
+      `data/reference/`. Bandarban went to a **third, reconciled pass**
+      (commit `82fe7e2`) after the first returned natural_forest for all
+      240 calls; that reconciliation moved every Bandarban figure in the
+      thesis and is the single most common source of stale numbers in this
+      repo — check dates before trusting any Bandarban value.
       **Pre-2000 regime: Option B decided** — supervised post-2000,
-      unsupervised before, with a 2000–2024 overlap comparison that makes
-      the pre-2000 uncertainty a measured quantity. Note E5 (Siamese)
-      therefore runs on post-2000 pairs only.
+      unsupervised before.
       **Gain stratum dropped** (Hansen `gain` is 2000–2012 only), its 50
       points moved to forest loss.
-      **Blocked:** plantation stratum needs BFD/BFIS boundaries — now on
-      the critical path, not a nice-to-have.
+      **Plantation stratum: interpreted, and not usable.** Both authors
+      completed the 40-point Sylhet plantation top-up on 2026-09-17 and
+      agreed on 12 of 40, kappa 0.067 — worse than either district. Author
+      A called 25 plantation and 9 water; author B called 14 plantation and
+      0 water. The stratum is reported as **not usable for validation**
+      (option C, chosen 2026-09-17), which is a finding about how hard tea
+      is to interpret rather than a gap in the work. It became a fifth line
+      of evidence in ch7 section 7.3. The interpreted files are committed.
+      If anyone revisits this, start with the water disagreement: the same
+      A-over-B water divergence shows in the main sample (13 against 6), so
+      it looks like one definitional difference rather than 40 judgements.
 - [x] Phase 5 — **done.** Spatially disjoint 10 km block splits written
       and verified (`src/splits.py`, `data/splits/*.geojson`, committed so
       the test set cannot drift). Balanced on forest loss as well as area,
@@ -234,49 +282,121 @@ next, rather than re-deriving it from scratch each time.
       **Patch size revised 256 → 128 px** — 256 does not tile inside a
       10 km block and yields only ~165 training patches. Experiment matrix
       frozen. See `docs/phase5_experiment_matrix.md`.
-- [~] Phase 6 — **E1/E2 done** (`src/models/rf.py`, 3 seeds). Terrain
-      helps in Gazipur (+0.017 macro F1) and Sylhet (+0.008), within seed
-      noise in Bandarban. All RF numbers are against Hansen training
-      labels, not the reference sample — pipeline checks, not results.
-      E3/E4/E5/E6 blocked on patch extraction, which is blocked on the
-      canopy threshold sign-off.
+- [x] Phase 6 — **done for every experiment still in scope.**
+      E1/E2 (`src/models/rf.py`, 3 seeds): terrain helps in Gazipur
+      (+0.017 macro F1) and Sylhet (+0.021), within seed noise in
+      Bandarban. E3/E4 (U-Net) and E7 (stacked ensemble) all run —
+      results in `outputs/tables/unet_*` and `ensemble_E7_*`. Patches
+      were extracted (706 at 128 px, `data/patches/`, 2024 only).
+      All of these are scored against Hansen training labels, not the
+      reference sample — pipeline checks, not accuracy results.
+      **E5 (Siamese) and E6 (cross-district transfer) were never built
+      and are now out of scope**, dropped with the RQ trim of 2026-09-17.
       **Class imbalance differs by two orders of magnitude across
       districts** (0.22% loss in Gazipur/Sylhet vs 24.3% in Bandarban), so
       patch sampling is weighted in the first two and unweighted in
       Bandarban. Test splits are never weighted.
-- [ ] Phase 7 — change detection and maps
-- [ ] Phase 8 — accuracy assessment and area estimation
-- [ ] Phase 9 — analysis
-- [ ] Phase 10 — dashboard
-- [ ] Phase 11 — writing
+- [~] Phase 7 — **change detection done, map rasters not exported.**
+      PCC and NDVI differencing run for all three districts
+      (`change_accuracy_*.csv`); LandTrendr permanent-vs-cyclical
+      separation done for Bandarban, satisfying rule 9.
+      **Map figure done 2026-09-17:** `bandarban_jhum_map.png` renders the
+      classified LandTrendr asset and is placed in ch6 section 6.5.
+      **Still not done:** `outputs/maps/` is empty — no GeoTIFF was pulled
+      down, so there is no raster deliverable, only the figure. Also
+      `change_areas_*` exists for Gazipur and Bandarban but **not
+      Sylhet**.
+      **Bug found and fixed while making that figure:** `landtrendr.py`
+      exported the asset `.toFloat()` with no `pyramidingPolicy`, so Earth
+      Engine built MEAN overviews of a categorical band. Any view below
+      native scale averaged the class codes — a cell half stable (0) and
+      half cyclical (2) averaged to 1 and rendered as permanent
+      conversion. The tabulated areas were never affected (they are
+      computed at native 30 m, and reproduce the published table exactly),
+      but the first draft of the map was a red speckle contradicting its
+      own legend. `export_asset` now sets
+      `pyramidingPolicy={'class': 'mode', ...}`; **the existing asset
+      predates that fix**, so anything drawn from it must downsample by
+      majority, as `fig_bandarban_jhum_map` does.
+- [x] Phase 8 — **done.** Olofsson adjusted areas, confusion matrices,
+      change-detection accuracy, and Cohen's κ for Gazipur and Sylhet.
+      Numbers in `outputs/tables/`, written up in Chapter 6 §6.6–6.7
+      (authoritative) and `docs/phase8_results.md` (phase record).
+      **κ fails Gate 4 in both districts measured** (0.157, 0.038), so
+      every reference-based figure is provisional pending reconciliation.
+      κ is not measurable for Bandarban — one interpreter.
+- [~] Phase 9 — analysis is written rather than held separately: the
+      cross-district synthesis lives in Chapter 6 and Chapter 7. No
+      separate analysis artifact exists and probably none is needed.
+- [~] Phase 10 — dashboard. **In scope and mandatory** (decided
+      2026-09-17). Written: `gee/07_dashboard.js`, a GEE App built to the
+      Phase 10 spec — per-epoch layer toggle, NDVI change layer with
+      legend, click-a-pixel annual NDVI/NBR trajectory, per-district
+      statistics panel, and a methods-and-limitations block carrying the
+      forest definition. AOI assets verified to resolve; JS syntax
+      checked. **Outstanding:** it has to be pasted into the GEE Code
+      Editor and published from there (Apps > Publish app) — that step
+      needs a browser signed in to the project account and cannot be done
+      from here. Put the published URL in Chapter 1 and the deck.
+      Every reference-based number in its panel is labelled provisional
+      on screen, for the κ reason. Do not remove that wording.
+- [~] Phase 11 — **substantially drafted.** Seven chapters in
+      `docs/thesis/`, assembled by `src/build_thesis.py` (docx) and
+      `src/build_latex.py` (Overleaf zip). Title page, abstract, figures,
+      tables and references all present. **Never compiled to PDF** — no
+      LaTeX toolchain locally, so the Overleaf compile is still an
+      unrun check.
 
 ## Research questions (current)
 
-1. How much forest cover has been lost in Gazipur, Sylhet, and
-   Bandarban between [audited start year] and 2024, and how do loss
-   patterns differ across the three districts?
-2. Which model — U-Net, Siamese Network, or Random Forest — performs
-   best in each district, and does the best model differ between them?
-3. Does adding GLCM texture features resolve natural-forest vs
-   tea-plantation confusion in Sylhet?
-4. Which change detection method (PCC, NDVI differencing, direct
-   Siamese comparison) is most accurate against the independent
-   reference sample?
-5. Do traditional ML methods reach comparable accuracy to deep
-   learning at a fraction of the compute cost?
-6. Can annual temporal segmentation (LandTrendr) separate cyclical jhum
-   disturbance from permanent forest conversion in Bandarban, where
-   bitemporal change detection cannot? *(Added with the Bandarban scope
-   change, 2026-07-26. This is the question the third district exists
-   to answer — without it, Bandarban is just more area for the same
-   result.)*
-7. How well do unsupervised change methods substitute for supervised
-   deep learning in the years where no training labels exist? *(Added
-   2026-07-26 with the Option B two-regime decision. Answered by running
-   both regimes over the 2000–2024 overlap against the same reference
-   sample — the measured gap is what the pre-2000 estimates' uncertainty
-   rests on. If the RQ count becomes unwieldy, fold this into RQ4's
-   discussion rather than dropping the overlap comparison itself.)*
+**Shrunk from 7 to 4 on 2026-09-17**, at the user's explicit direction,
+because two of the original seven had no complete result behind them:
+old RQ4 depended on a Siamese-network run (E5) that was never built, and
+old RQ7 (unsupervised-vs-supervised substitution) was never attempted at
+all. Keeping either as a numbered question with zero results behind it
+was a worse look than dropping it. The renumbering:
+
+- old RQ1 → RQ1 (unchanged)
+- old RQ2 → RQ2, **with "Siamese Network" removed from the option list**
+  — same reason as above, it was never built, so it can't be compared
+- old RQ3 → RQ3 (unchanged)
+- old RQ6 → **RQ4** (the Bandarban/LandTrendr question — this one was
+  never a candidate for cutting; it's why the third district exists)
+- old RQ4 (change-detection method: PCC/NDVI/Siamese) → **dropped as a
+  standalone RQ.** The PCC-vs-NDVI comparison still stands and is still
+  reported in Chapter 6 — it's now a supporting finding under RQ2's
+  discussion, not its own numbered question, since the Siamese third of
+  the comparison never happened.
+- old RQ5 (traditional ML vs. DL cost/accuracy trade-off) → **dropped as
+  a standalone RQ**, folded into RQ2's discussion (it falls directly out
+  of the RQ2 results — RF wins at 55 patches, loses at 167).
+- old RQ7 → **dropped entirely.** No experiment was ever run for it.
+
+**Reworded 2026-09-17 to higher-order Bloom's verbs.** The measurements
+behind each question are unchanged — only the framing verb and a closing
+"what does this reveal" clause were added, moving each question from
+descriptive (*how much*, *which*, *does X*) to analytical/evaluative.
+The clause is not decoration: it is the bridge each question takes into
+the discussion chapter.
+
+1. To what extent, and in what spatial patterns, has forest cover
+   changed across Gazipur, Sylhet, and Bandarban between [audited start
+   year] and 2024 — and what does this variation reveal about the
+   relationship between landscape type and dominant loss mechanism?
+2. How does the comparative performance of Random Forest and U-Net vary
+   across landscapes of differing spectral and spatial complexity, and
+   what does this reveal about the relationship between a target class's
+   discriminating signal and the model architecture needed to detect it?
+3. To what extent does incorporating GLCM texture features improve
+   discrimination between natural forest and tea plantation in Sylhet,
+   and what does the isolated contribution of texture reveal about the
+   spatial versus spectral nature of the confusion?
+4. To what extent can annual temporal segmentation (LandTrendr)
+   distinguish cyclical jhum disturbance from permanent forest
+   conversion in Bandarban, in a setting where bitemporal comparison
+   structurally cannot? *(Added with the Bandarban scope change,
+   2026-07-26. This is the question the third district exists to answer
+   — without it, Bandarban is just more area for the same result.)*
 
 ## Working style for this project
 

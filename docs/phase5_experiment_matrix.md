@@ -179,9 +179,14 @@ thesis; a three-district study with pixel-counted areas is not.
 - [x] Patch size fixed with a written reason (§1)
 - [x] Experiment matrix frozen (§2)
 - [x] Class-imbalance strategy decided per district (§3)
-- [ ] Matrix copied into the thesis methods chapter
-- [ ] Patch extraction run — blocked on the canopy threshold sign-off,
-      since labels depend on it
+- [x] Matrix copied into the thesis methods chapter (ch5 §5.6)
+- [x] Patch extraction run — 706 patches at 128 px across the three
+      districts, 2024, in `data/patches/`. The canopy threshold it
+      depended on was signed off 2026-09-17.
+
+**Gate 5 is closed.** Note that E5 and E6 in the matrix above were never
+run and were dropped from scope with the RQ trim of 2026-09-17; the
+matrix is kept as drafted for the record.
 
 ---
 

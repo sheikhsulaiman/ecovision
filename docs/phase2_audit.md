@@ -1,7 +1,8 @@
 ---
 title: "EcoVision — Phase 2 scene availability audit: results and Gate 2 decisions"
-status: Gate 2 — decisions proposed, awaiting supervisor confirmation
+status: Gate 2 — CONFIRMED, decisions final
 date: 2026-07-26
+date_confirmed: 2026-09-17
 ---
 
 # Phase 2 — scene availability audit
@@ -170,6 +171,8 @@ should still be stated in Chapter 4.
 - [x] Start year fixed and justified in one written paragraph (§2)
 - [x] Epoch anchors chosen (§4)
 - [x] Bandarban annual-coverage condition tested and met (§6)
-- [ ] Supervisor confirmation of START_YEAR and epoch anchors
+- [x] Supervisor confirmation of START_YEAR and epoch anchors
+      (confirmed 2026-09-17)
 
-Phase 3 may begin once the final box is ticked.
+**Gate 2 is closed.** START_YEAR = 1988 and the epoch anchors
+T0 = 1990, T1 = 2000, T2 = 2010, T3 = 2024 are final.

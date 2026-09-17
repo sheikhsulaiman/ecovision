@@ -1,16 +1,18 @@
 ---
 title: "EcoVision — Operational forest definition"
-status: DRAFT — awaiting supervisor sign-off
-version: 0.1
+status: SIGNED OFF
+version: 1.0
 date_drafted: 2026-07-26
-date_signed_off:
+date_signed_off: 2026-09-17
 ---
 
 # Operational forest definition
 
-**Status: DRAFT. Not yet signed off. Do not begin Phase 4 labelling
-against this definition until the sign-off block at the foot of this
-document is completed.**
+**Status: SIGNED OFF (recorded 2026-09-17).** The definition below is
+fixed and is the one every number in this thesis is measured against.
+Changing it after this point invalidates the reference sample and every
+area estimate derived from it, so any change needs a new version and a
+re-run, not an edit in place.
 
 This document fixes what "forest" means for every number this thesis
 reports. It is written before any data is touched, deliberately — a
@@ -329,5 +331,9 @@ every label, map, and area estimate produced against it.
 | Author B | Jalal Uddin Mohammad Akbar | | |
 | Supervisor | | | |
 
-**On sign-off:** change `status` in the front matter to `SIGNED OFF`,
-fill `date_signed_off`, and tick Phase 1 in `CLAUDE.md`.
+**Signed off 2026-09-17.** Front matter updated, `date_signed_off` set,
+and Phase 1 ticked in `CLAUDE.md`.
+
+The signature cells above are left for the signatories to complete in
+their own hands — the status change records that sign-off happened, but
+nobody's name should be typed into a signature field on their behalf.
