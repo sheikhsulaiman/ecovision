@@ -58,7 +58,7 @@ CHAPTERS = [
     ("ch4_data.md", "Data", "ch4"),
     ("ch5_methodology.md", "Methodology", "ch5"),
     ("ch6_results.md", "Results", "ch6"),
-    ("ch8_discussion.md", "Discussion and Conclusions", "ch7"),
+    ("ch7_discussion.md", "Discussion and Conclusions", "ch7"),
 ]
 
 # Keyed on (chapter, heading cue). Chapter matters: "Cross-sensor
@@ -80,6 +80,12 @@ FIGURES = {
     ("ch4", "Temporal design"): (
         "scene_availability.png", "fig:scenes",
         "Usable Landsat scenes per district-year."),
+    ("ch6", "Cyclical versus permanent disturbance"): (
+        "bandarban_jhum_map.png", "fig:jhummap",
+        "Bandarban disturbance classified from the annual NBR trajectory: "
+        "permanent conversion separated from cyclical \\textit{jhum}. "
+        "Displayed at 100\\,m by majority class; the areas quoted in "
+        "\\S6.5 are tabulated at the native 30\\,m."),
 }
 
 # LaTeX specials escaped FIRST, then typography substituted. Order
@@ -166,6 +172,15 @@ REFERENCES = r"""
   journal = {Remote Sensing of Environment}, volume = {114}, number = {12},
   pages   = {2897--2910}, year = {2010}
 }
+@article{olofsson2013,
+  author  = {Olofsson, Pontus and Foody, Giles M. and Stehman, Stephen V.
+             and Woodcock, Curtis E.},
+  title   = {Making Better Use of Accuracy Data in Land Change Studies:
+             Estimating Accuracy and Area and Quantifying Uncertainty Using
+             Stratified Estimation},
+  journal = {Remote Sensing of Environment}, volume = {129},
+  pages   = {122--131}, year = {2013}, doi = {10.1016/j.rse.2012.10.031}
+}
 @article{olofsson2014,
   author  = {Olofsson, Pontus and Foody, Giles M. and Herold, Martin and
              Stehman, Stephen V. and Woodcock, Curtis E. and Wulder, Michael A.},
@@ -223,10 +238,55 @@ def escape(text: str) -> str:
 def inline(text: str) -> str:
     """Markdown emphasis to LaTeX, applied after escaping."""
     text = escape(text)
-    text = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", text)
+    # Non-greedy, and tolerant of nested single-asterisk italics: [^*]+
+    # could not span the *jhum* inside a bolded phrase, so that phrase
+    # silently kept its literal asterisks.
+    text = re.sub(r"\*\*(.+?)\*\*", r"\\textbf{\1}", text)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", text)
     text = re.sub(r"`([^`]+)`", r"\\texttt{\1}", text)
     return text
+
+
+def starts_block(line: str) -> bool:
+    """True if the line opens a construct that must not be folded into a paragraph."""
+    return bool(
+        line.startswith(("> ", "#", "|", "---"))
+        or re.match(r"^[-*] ", line)
+        or re.match(r"^\d+\. ", line)
+    )
+
+
+def collect_list_items(lines: list[str], i: int, marker: str) -> tuple[list[str], int]:
+    """Consume one markdown list, joining each item's continuation lines.
+
+    A list item runs until the next item marker or the end of the list;
+    wrapped lines are indented and must be folded back into the item they
+    belong to. Reading only the marker line truncated every wrapped item
+    and closed the environment after the first line — which shattered a
+    bolded phrase spanning a line break into stray literal asterisks.
+    """
+    items: list[str] = []
+    while i < len(lines):
+        line = lines[i].rstrip()
+        if re.match(marker, line):
+            items.append(re.sub(marker, "", line))
+            i += 1
+            continue
+        # Indented continuation of the item currently being built.
+        if items and line.strip() and line[:1].isspace():
+            items[-1] += " " + line.strip()
+            i += 1
+            continue
+        # A blank line may separate items in a loose list; look past it.
+        if not line.strip():
+            j = i + 1
+            while j < len(lines) and not lines[j].strip():
+                j += 1
+            if j < len(lines) and re.match(marker, lines[j].rstrip()):
+                i = j
+                continue
+        break
+    return items, i
 
 
 def convert(path: Path, title: str, key: str, placed: set[str]) -> str:
@@ -290,30 +350,33 @@ def convert(path: Path, title: str, key: str, placed: set[str]) -> str:
             out += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
             continue
 
-        if re.match(r"^[-*] ", line):
-            items = []
-            while i < len(lines) and re.match(r"^[-*] ", lines[i].rstrip()):
-                items.append(inline(lines[i].rstrip()[2:]))
-                i += 1
-            out += [r"\begin{itemize}"] + [f"  \\item {t}" for t in items] + \
-                   [r"\end{itemize}", ""]
-            continue
-
-        if re.match(r"^\d+\. ", line):
-            items = []
-            while i < len(lines) and re.match(r"^\d+\. ", lines[i].rstrip()):
-                items.append(inline(re.sub(r"^\d+\. ", "", lines[i].rstrip())))
-                i += 1
-            out += [r"\begin{enumerate}"] + [f"  \\item {t}" for t in items] + \
-                   [r"\end{enumerate}", ""]
+        if re.match(r"^[-*] ", line) or re.match(r"^\d+\. ", line):
+            ordered = bool(re.match(r"^\d+\. ", line))
+            marker = r"^\d+\. " if ordered else r"^[-*] "
+            items, i = collect_list_items(lines, i, marker)
+            env = "enumerate" if ordered else "itemize"
+            out += [f"\\begin{{{env}}}"] + \
+                   [f"  \\item {inline(t)}" for t in items] + \
+                   [f"\\end{{{env}}}", ""]
             continue
 
         if line.startswith("---") or not line:
             i += 1
             continue
 
-        out += [inline(line), ""]
+        # Gather the whole wrapped paragraph before converting it. Emitting
+        # one source line at a time put a blank line after each, so every
+        # wrapped line became its own LaTeX paragraph, and emphasis spanning
+        # a line break never matched and leaked literal asterisks.
+        body = [line]
         i += 1
+        while i < len(lines):
+            nxt = lines[i].rstrip()
+            if not nxt.strip() or starts_block(nxt):
+                break
+            body.append(nxt.strip())
+            i += 1
+        out += [inline(" ".join(body)), ""]
 
         if pending:
             fname, label, caption = pending
@@ -429,6 +492,12 @@ assessment, Bangladesh
 __INPUTS__
 
 %% ---------- references ----------
+%% The chapters cite sources in prose ("Hansen et al. (2013)") rather than
+%% with \cite{}, so BibTeX would otherwise emit an empty bibliography --
+%% it only prints entries that are cited. \nocite{*} forces every entry in
+%% refs.bib into the list. Replace this with real \cite{} commands if the
+%% numbered IEEE style is wanted in the text as well.
+\nocite{*}
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
 \addcontentsline{toc}{chapter}{References}

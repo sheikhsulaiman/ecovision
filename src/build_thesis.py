@@ -65,7 +65,7 @@ CHAPTERS = [
     ("ch4_data.md", "Data"),
     ("ch5_methodology.md", "Methodology"),
     ("ch6_results.md", "Results"),
-    ("ch8_discussion.md", "Discussion and Conclusions"),
+    ("ch7_discussion.md", "Discussion and Conclusions"),
 ]
 
 # Figures placed after the section whose heading matches. Keyed on a
@@ -93,10 +93,18 @@ FIGURE_PLACEMENT = {
         "scene_availability.png",
         "Usable Landsat scenes per district-year. START_YEAR is fixed at "
         "1988: 1985-87 returned zero scenes in all three districts."),
+    (6, "Cyclical versus permanent disturbance"): (
+        "bandarban_jhum_map.png",
+        "Bandarban disturbance classified from the annual NBR trajectory: "
+        "permanent conversion separated from cyclical jhum. Displayed at "
+        "100 m by majority class; the areas quoted in section 6.5 are "
+        "tabulated at the native 30 m."),
 }
 
-# Verified against the publisher record. See docs/thesis/ch2_literature.md
-# section 2.10 for the two claims that could NOT be verified.
+# Verified against the publisher record. The two claims that could NOT be
+# verified are recorded in docs/source_verification_notes.md (moved there
+# from ch2 section 2.10 on 2026-09-17, because it was editorial notes
+# addressed to the authors sitting inside the submittable document).
 REFERENCES = [
     "L. Breiman, “Random forests,” Machine Learning, vol. 45, "
     "no. 1, pp. 5–32, 2001.",
@@ -122,6 +130,12 @@ REFERENCES = [
     "forest disturbance and recovery using yearly Landsat time series: "
     "1. LandTrendr — temporal segmentation algorithms,” Remote "
     "Sensing of Environment, vol. 114, no. 12, pp. 2897–2910, 2010.",
+
+    "P. Olofsson, G. M. Foody, S. V. Stehman, and C. E. Woodcock, "
+    "“Making better use of accuracy data in land change studies: "
+    "estimating accuracy and area and quantifying uncertainty using "
+    "stratified estimation,” Remote Sensing of Environment, vol. 129, "
+    "pp. 122–131, 2013, doi: 10.1016/j.rse.2012.10.031.",
 
     "P. Olofsson, G. M. Foody, M. Herold, S. V. Stehman, C. E. Woodcock, "
     "and M. A. Wulder, “Good practices for estimating area and "
@@ -199,13 +213,27 @@ def add_table(doc: Document, header: list[str], rows: list[list[str]],
     doc.add_paragraph()
 
 
+def starts_block(line: str) -> bool:
+    """True if the line opens a construct that must not be folded into a paragraph."""
+    return bool(
+        line.startswith(("> ", "#", "|", "---"))
+        or re.match(r"^[-*] ", line)
+        or re.match(r"^\d+\. ", line)
+    )
+
+
 def parse_inline(paragraph, text: str) -> None:
-    """Render **bold**, *italic* and `code` runs."""
-    for part in re.split(r"(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)", text):
+    """Render **bold**, *italic* and `code` runs.
+
+    The bold alternative is non-greedy rather than [^*]+ so that a bolded
+    phrase containing an italic (*jhum*) still matches; the inner markers
+    are stripped and the whole run is bolded.
+    """
+    for part in re.split(r"(\*\*.+?\*\*|\*[^*]+\*|`[^`]+`)", text):
         if not part:
             continue
         if part.startswith("**") and part.endswith("**"):
-            paragraph.add_run(part[2:-2]).bold = True
+            paragraph.add_run(part[2:-2].replace("*", "")).bold = True
         elif part.startswith("*") and part.endswith("*"):
             paragraph.add_run(part[1:-1]).italic = True
         elif part.startswith("`") and part.endswith("`"):
@@ -366,26 +394,43 @@ def render_chapter(doc: Document, path: Path, number: int,
                       counters["table"])
             continue
 
-        if re.match(r"^[-*] ", line):
-            para = doc.add_paragraph(style="List Bullet")
-            parse_inline(para, line[2:])
+        # Wrapped list items: fold indented continuation lines into the
+        # item they belong to, otherwise each becomes its own paragraph
+        # and any emphasis spanning the line break loses its markers.
+        list_match = re.match(r"^[-*] ", line) or re.match(r"^\d+\. ", line)
+        if list_match:
+            ordered = bool(re.match(r"^\d+\. ", line))
+            body = re.sub(r"^\d+\. " if ordered else r"^[-*] ", "", line)
             i += 1
-            continue
-
-        if re.match(r"^\d+\. ", line):
-            para = doc.add_paragraph(style="List Number")
-            parse_inline(para, re.sub(r"^\d+\. ", "", line))
-            i += 1
+            while i < len(lines):
+                nxt = lines[i].rstrip()
+                if nxt.strip() and nxt[:1].isspace():
+                    body += " " + nxt.strip()
+                    i += 1
+                    continue
+                break
+            para = doc.add_paragraph(style="List Number" if ordered else "List Bullet")
+            parse_inline(para, body)
             continue
 
         if line.startswith("---") or not line:
             i += 1
             continue
 
-        para = doc.add_paragraph()
-        parse_inline(para, line)
-        para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        # Fold the wrapped source lines into one paragraph before rendering,
+        # so a wrapped paragraph is one paragraph and emphasis spanning a
+        # line break still matches.
+        body = [line]
         i += 1
+        while i < len(lines):
+            nxt = lines[i].rstrip()
+            if not nxt.strip() or starts_block(nxt):
+                break
+            body.append(nxt.strip())
+            i += 1
+        para = doc.add_paragraph()
+        parse_inline(para, " ".join(body))
+        para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
 
         if pending_figure:
             fname, caption = pending_figure
