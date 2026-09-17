@@ -43,7 +43,8 @@ is one this thesis treats explicitly rather than averaging away
 (see §5.6 and rule 5 in the project constraints).
 
 Gazipur also presents a specific interpretation difficulty that recurs
-throughout Chapter 7. Village homestead vegetation in Bangladesh is dense,
+throughout the accuracy assessment (§6.6–§6.7). Village homestead
+vegetation in Bangladesh is dense,
 green, and structurally similar to forest at 30 m resolution, but it sits
 over houses, ponds and a road grid and is not forest under the definition
 adopted here. Distinguishing it requires attention to settlement pattern
@@ -71,7 +72,7 @@ that motivates the annual analysis described in §5.8.
 The district is also dominated by *haors*, seasonally inundated wetland
 basins. Their extent varies enormously between wet and dry season, which
 creates a definitional problem for the water class that is documented in
-Chapter 7.
+§6.6.
 
 ## 3.4 Bandarban — cyclical disturbance
 

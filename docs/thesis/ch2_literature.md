@@ -41,7 +41,7 @@ globally at 30 m from more than three million Landsat images over 32
 years. Its `occurrence` band expresses the *frequency* with which a pixel
 was water, which makes it a statement about permanence rather than about
 any particular date — a distinction that turns out to matter for this
-study's water class and is discussed in Chapter 8.
+study's water class and is discussed in Chapter 7.
 
 ## 2.2 Forest definitions
 
@@ -107,7 +107,7 @@ models make *uncorrelated* errors, which is the situation here: a
 per-pixel model and a convolutional model fail on different things.
 
 The literature is less explicit about a constraint this study encountered
-and reports in Chapter 8 — that a stacked ensemble inherits the class
+and reports in Chapter 7 — that a stacked ensemble inherits the class
 coverage of its meta-training partition, and can therefore be strictly
 worse than its own best member on a class absent from that partition.
 
@@ -199,9 +199,10 @@ ablation.
 
 On reference data, the **Spatial Database of Planted Trees (SDPT)** of
 Richter et al. is the principal global source. **Version 2.0 (2024)
-covers 158 countries**, a substantial expansion over earlier versions.
-This is a correction to a claim made elsewhere in this thesis and is
-addressed in §2.10 below.
+covers 158 countries**, a substantial expansion over version 1.3, which
+carried 43 country layers. The distinction matters for this study: the
+plantation-data check reported in §7.3 was run against v1.3, and its
+finding is scoped to that version accordingly.
 
 For Bangladesh specifically, national statistics are available from the
 Bangladesh Tea Board and Bangladesh Tea Association: **167 commercial tea
@@ -244,7 +245,7 @@ correction for chance agreement is arguably inappropriate for map
 accuracy, and Olofsson et al. explicitly recommend against reporting it
 as a map accuracy statistic. That critique does not apply to the use made
 of it here, which is its original one: agreement between two human
-interpreters. Chapter 6 reports a failing κ and Chapter 8 interprets it.
+interpreters. Chapter 6 reports a failing κ and Chapter 7 interprets it.
 
 Finally, **overall accuracy is inappropriate as a headline metric for a
 minority class**. Where change is 0.22% of pixels, a map predicting "no
@@ -307,44 +308,4 @@ comparison without the separation being made.
 **Bangladesh-specific reference data does not exist.** National tea area
 statistics exist; spatial boundaries suitable for training or assessment
 do not. This bounds what any study of the region can currently achieve
-and is the principal limitation reported in Chapter 8.
-
----
-
-## 2.10 Two corrections uncovered while verifying these sources
-
-**These affect claims currently made in Chapters 4 and 8 and must be
-resolved before submission.**
-
-### The "Siddik et al. (2025)" citation cannot be verified
-
-The figure of ">10,000 ha of tea in Sylhet district", attributed to
-Siddik et al. (2025), appears in the project code, in Chapter 4.6 and in
-Chapter 8.8. **Searches of the published literature did not locate this
-work.** Until you can produce the paper itself, treat this citation as
-unverified and do not submit it.
-
-The underlying claim is separately supportable. Bangladesh Tea Board and
-Bangladesh Tea Association figures give 167 commercial estates covering
-approximately 113,100 ha nationally, with Sylhet the dominant region, and
-district-level figures exceeding 10,000 ha are consistent with that. Cite
-the industry source you can actually obtain, and adjust the wording to
-match exactly what it states.
-
-### SDPT covers 158 countries in version 2.0
-
-Chapter 8.3 currently asserts that "a global plantation database omits
-Bangladesh entirely". That test was run against **SDPT v1.3**, which
-carried 43 country layers. **Version 2.0 (2024) covers 158 countries.**
-
-The claim as written is therefore either out of date or version-specific,
-and must be corrected in one of two ways: re-run the check against v2.0
-and report what it actually contains for Bangladesh, or restate the claim
-explicitly as applying to v1.3 at the time of testing. The second is
-honest but weaker; the first is a twenty-minute check and is worth doing,
-because if v2.0 *does* contain Bangladeshi tea boundaries it changes the
-plantation-layer limitation materially — and if it does not, the claim
-becomes considerably stronger for being tested against the current
-version.
-
-Do not leave it as it stands.
+and is the principal limitation reported in Chapter 7.

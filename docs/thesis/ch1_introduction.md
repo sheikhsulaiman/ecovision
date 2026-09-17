@@ -73,33 +73,41 @@ specific about where it should be deployed.
 
 ## 1.4 Research questions
 
-1. **How much forest cover has been lost** in Gazipur, Sylhet and
-   Bandarban between 1988 and 2024, and how do loss patterns differ
-   across the three districts?
+1. **To what extent, and in what spatial patterns, has forest cover
+   changed** across Gazipur, Sylhet and Bandarban between 1988 and 2024
+   — and what does this variation reveal about the relationship between
+   landscape type and dominant loss mechanism?
 
-2. **Which model** — U-Net, Siamese network, or Random Forest — performs
-   best in each district, and does the best model differ between them?
+2. **How does the comparative performance of Random Forest and U-Net
+   vary** across landscapes of differing spectral and spatial
+   complexity, and what does this reveal about the relationship between
+   a target class's discriminating signal and the model architecture
+   needed to detect it?
 
-3. **Does adding GLCM texture features resolve** the natural-forest
-   versus tea-plantation confusion in Sylhet?
+3. **To what extent does incorporating GLCM texture features improve
+   discrimination** between natural forest and tea plantation in Sylhet,
+   and what does the isolated contribution of texture reveal about the
+   spatial versus spectral nature of the confusion?
 
-4. **Which change detection method** — post-classification comparison,
-   NDVI differencing, or direct Siamese comparison — is most accurate
-   against an independent reference sample?
+4. **To what extent can annual temporal segmentation distinguish
+   cyclical *jhum* disturbance from permanent forest conversion** in
+   Bandarban, in a setting where bitemporal comparison structurally
+   cannot?
 
-5. **Do traditional machine learning methods reach comparable accuracy**
-   to deep learning at a fraction of the computational cost?
-
-6. **Can annual temporal segmentation separate cyclical *jhum*
-   disturbance from permanent forest conversion** in Bandarban, where
-   bitemporal change detection cannot?
-
-7. **How well do unsupervised change methods substitute for supervised
-   deep learning** in the years where no training labels exist?
-
-RQ6 is the question the third district exists to answer. Without it,
+RQ4 is the question the third district exists to answer. Without it,
 Bandarban contributes additional area to the same result rather than a
 distinct test.
+
+Two further comparisons are reported in Chapter 6 as supporting findings
+rather than standalone research questions: change-detection method
+choice (post-classification comparison versus NDVI differencing), and
+the accuracy/cost trade-off between traditional machine learning and
+deep learning. Both were originally scoped as separate research
+questions alongside a direct Siamese-network comparison; the
+Siamese-network run was not completed, so a fair three-way comparison
+was never possible, and the two questions were folded into the
+discussion of RQ2 rather than left as numbered questions with an
+incomplete answer.
 
 ## 1.5 Scope and boundaries
 
@@ -167,12 +175,11 @@ area estimation framework.
 
 **Chapter 6** presents results, distinguishing throughout between figures
 scored against training labels and figures scored against the independent
-reference sample.
+reference sample. The accuracy assessment and adjusted area estimates are
+presented there in full, in §6.6 and §6.7, rather than as a separate
+chapter.
 
-**Chapter 7** presents the accuracy assessment and adjusted area
-estimates in detail.
-
-**Chapter 8** discusses what the results mean, what they do not support,
+**Chapter 7** discusses what the results mean, what they do not support,
 and the limitations that bound them.
 
 ## 1.8 A note on terminology

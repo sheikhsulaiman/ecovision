@@ -195,7 +195,7 @@ interpreted once and a cross-stratum subset interpreted by both authors
 so that inter-interpreter agreement remained measurable.
 
 The consequences are quantified rather than described, and are reported
-in Chapter 7. They are real: with a small number of reference change
+in §6.6. They are real: with a small number of reference change
 points, several forest-loss confidence intervals include zero.
 
 This trade was made deliberately and in one direction only. A smaller
@@ -222,10 +222,11 @@ Class 2 rests on **hand-digitised tea estate boundaries**, totalling
 1,303 ha across 12 polygons, drawn in Google Earth Pro against sub-metre
 imagery.
 
-They were drawn by hand because no alternative exists. Section 8.3
+They were drawn by hand because no alternative exists. Section 7.3
 documents the automated routes that were attempted and measured to fail:
-no open dataset maps Bangladesh's tea estates; global plantation
-databases omit the country entirely; rendered global forest-cover tiles
+no open dataset maps Bangladesh's tea estates at a usable resolution; the
+Spatial Database of Planted Trees carried no Bangladesh layer in the
+version tested (v1.3); rendered global forest-cover tiles
 return zero coverage over Sylhet while returning high coverage over
 comparable tea landscapes elsewhere; public gazetteers resolve one estate
 in nineteen under strict name matching; and a purpose-built row-texture

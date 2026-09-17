@@ -153,8 +153,14 @@ pseudo-replicated — is reported alongside the result.
 | E2 | E1 + terrain | Does terrain help? |
 | E3 | U-Net, full 23-band stack | Deep learning baseline |
 | E4 | U-Net, 20 bands (texture removed) | **RQ3 ablation** |
-| E5 | Siamese network | Direct change detection |
 | E7 | Stacked RF + U-Net ensemble | Does combining help? |
+
+A sixth experiment, E5 — a Siamese network for direct bitemporal change
+detection — was specified in the original experiment matrix but was not
+run. It is documented here rather than omitted silently, because the
+change-detection comparison in §5.7 is narrower as a result: two methods
+are compared rather than three. Nothing reported in this thesis depends
+on E5, and no research question requires it.
 
 Random Forest is run first and deliberately. It establishes an accuracy
 floor, debugs the entire data pipeline at negligible cost, and produces
@@ -211,19 +217,24 @@ confidently a base model predicts it.
 
 ## 5.7 Bitemporal change detection
 
-Three bitemporal methods are compared:
+Two bitemporal methods are compared:
 
 | Method | Type |
 |---|---|
 | Post-classification comparison (PCC) | Indirect — classify both dates, difference |
 | NDVI differencing | Spectral — threshold the index change |
-| Siamese network | Direct |
+
+A third, a direct Siamese comparison, was specified but not run (E5,
+§5.6). The comparison below is therefore between an indirect and a
+spectral method only.
 
 **PCC is expected to be the method to beat rather than to trust.** It
 accumulates error from both dates: if each map is 90% accurate, the change
 map is approximately 81% accurate, because an error at either date becomes
-a spurious change. This is the standard argument for direct methods, and
-the results either support it or do not.
+a spurious change. This is the standard argument for direct methods.
+With E5 not run, that argument is not tested against a direct method
+here; what can be tested is whether PCC's accumulated error is visible in
+its own output, and Chapter 6 reports that it is.
 
 The classifier used for PCC is trained on 2024 labels and applied to the
 1990 composite. This is deliberate and follows from the two-regime design

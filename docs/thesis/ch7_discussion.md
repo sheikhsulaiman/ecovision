@@ -1,6 +1,6 @@
-# Chapter 8 — Discussion
+# Chapter 7 — Discussion
 
-## 8.1 Model choice matters more as landscape complexity rises
+## 7.1 Model choice matters more as landscape complexity rises
 
 The central claim of this thesis is supported, and the mechanism by which
 it holds is more specific than the claim itself.
@@ -30,7 +30,7 @@ question. The useful question is which property of the target class is
 carrying the signal — spectral, spatial, or temporal — and only the third
 of these is invisible to every model considered here.
 
-## 8.2 Ensembles inherit the coverage of their meta-training set
+## 7.2 Ensembles inherit the coverage of their meta-training set
 
 E7 scored 0.0000 on plantation while the U-Net inside it scored 0.4520.
 
@@ -48,7 +48,7 @@ and the sampling unit is a block rather than a pixel, meta-learner class
 coverage must be checked explicitly; it is not implied by the base models
 having seen the class.
 
-## 8.3 Plantation mapping is genuinely unsolved, and this study measured it four ways
+## 7.3 Plantation mapping is genuinely unsolved, and this study measured it five ways
 
 RQ3 asked whether texture resolves the natural-forest/tea confusion. The
 answer is that it helps materially — plantation F1 rising from 0.3696 to
@@ -56,7 +56,7 @@ answer is that it helps materially — plantation F1 rising from 0.3696 to
 misclassified.
 
 More significant than the number is the accumulated evidence that this
-confusion is hard in a way that is not usually documented. Four
+confusion is hard in a way that is not usually documented. Five
 independent measurements point the same way:
 
 **1. Sub-metre manual digitisation carries an 83% error.** A polygon
@@ -64,8 +64,12 @@ digitised as 1,906 ha of tea against sub-metre imagery was found on
 independent review to be approximately 1,600 ha of hill forest, and was
 corrected to 321 ha. It was caught only because it was checked.
 
-**2. Open data does not exist.** A global plantation database omits
-Bangladesh entirely. Rendered global forest-cover tiles return 0.00%
+**2. Open data does not exist.** The Spatial Database of Planted Trees
+carried no Bangladesh layer in **version 1.3**, the version available and
+tested here; version 2.0 (2024) expanded coverage to 158 countries and
+has not been re-checked for Bangladesh, so this finding is stated for
+v1.3 rather than as a claim about the database in general (§2.6).
+Rendered global forest-cover tiles return 0.00%
 coverage over Sylhet while returning 83% over Sumatra and 19% over Assam.
 OpenStreetMap contains one relevant polygon district-wide. Public
 gazetteers resolve one estate in nineteen under strict name matching.
@@ -81,6 +85,17 @@ bounds what is achievable at that resolution over this landscape.
 0.038 in Sylhet and 0.157 in Gazipur, over 280 shared points, against a
 0.75 target.
 
+**5. Agreement is worse on tea specifically than on everything else.** A
+40-point stratum drawn deliberately inside the tea-growing upazilas was
+interpreted independently by both authors. They agreed on 12 of 40
+points, κ = 0.067. One author called 25 of the 40 plantation; the other
+called 14, and called 20 of them natural forest. This is the sharpest
+form of the result: on a sample constructed to contain tea, two people
+working from the same written protocol could not agree what they were
+looking at. The stratum is therefore reported as **not usable for
+validation**, which is a finding about the class rather than about the
+sample.
+
 Taken together these place the classification results in context. A model
 achieving 0.45 F1 on a class that expert human interpreters cannot agree
 on, and for which no reference dataset exists anywhere, is a different
@@ -88,7 +103,7 @@ kind of result from one achieving 0.45 on a well-defined class. This is
 also why the plantation problem persists in regional forest statistics:
 the ground truth required to fix it has not been assembled.
 
-## 8.4 What the κ result actually means
+## 7.4 What the κ result actually means
 
 Two interpreters, working from the same written protocol over the same
 points, disagreed on 101 of 180 Sylhet points, with 75 of those
@@ -124,7 +139,7 @@ That this study reports a failing κ rather than omitting it is a
 deliberate choice. An unreported κ is indistinguishable from an
 unmeasured one.
 
-## 8.5 Bitemporal change detection is weak here, and the reason is structural
+## 7.5 Bitemporal change detection is weak here, and the reason is structural
 
 Change-class F1 did not exceed 0.36 for any bitemporal method in any
 district. NDVI differencing beat post-classification comparison
@@ -145,7 +160,7 @@ wrong metric for a landscape where the change class is itself contested**.
 Where two interpreters cannot agree on the state of a pixel at a single
 date, the derived change label inherits both disagreements.
 
-## 8.6 Cyclical disturbance and the limits of two dates
+## 7.6 Cyclical disturbance and the limits of two dates
 
 The Bandarban result is the clearest methodological finding in the study.
 
@@ -176,7 +191,7 @@ would inflate the headline figure with fallows that have not yet returned.
 It amounts to 19.8% of disturbance — too large to absorb silently, and an
 irreducible property of a series ending in 2024.
 
-## 8.7 Published harmonisation coefficients did not transfer
+## 7.7 Published harmonisation coefficients did not transfer
 
 Roy et al. (2016) ETM+-to-OLI coefficients performed **worse than applying
 no correction at all** on this data: held-out residual 0.01680 against
@@ -193,7 +208,7 @@ empirical question. Testing them cost one script. Adopting them on
 authority would have propagated a measured degradation into the study's
 most important index, invisibly.
 
-## 8.8 Limitations
+## 7.8 Limitations
 
 **Reference sample size.** The reduced design produced forest-loss
 intervals that include zero in two of three districts. Only Bandarban's
@@ -228,8 +243,8 @@ date-based reference class, not a detection failure, and it should not be
 reported as one.
 
 **Bandarban land-cover accuracy unresolved.** The map classifies 93 of
-120 reference points as non-forest where the reference records 108 as
-natural forest, giving overall agreement of 0.233. Two explanations fit —
+120 reference points as non-forest where the reference records 93 as
+natural forest, giving overall agreement of 0.317. Two explanations fit —
 residual over-calling of forest by the interpreter, or genuine
 under-mapping by Hansen in a swidden landscape where the 2000 baseline
 catches plots that have since regrown — and this study cannot separate
@@ -239,7 +254,7 @@ them.
 classifier trained on 2024 transfers to 1990. The overlap comparison that
 would quantify this was not completed.
 
-## 8.9 Future work
+## 7.9 Future work
 
 The single highest-value next step is **not** a better model. It is a
 reference dataset for Bangladeshi tea plantation. Every plantation result

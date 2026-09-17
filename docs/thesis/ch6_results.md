@@ -94,10 +94,11 @@ RF wins decisively at 55 patches (0.4125 against 0.3157), loses at 167
 (0.5028 against 0.5895), and ties at 260 where the classes are already
 near-balanced.
 
-This is the direct answer to RQ5. Deep learning is not uniformly
-superior; it is superior where there is enough labelled data to fit it.
-Below that threshold the cheaper model is not merely competitive — it is
-better, and it costs a fraction of the compute.
+This sharpens the RQ2 model-choice finding into a cost trade-off: deep
+learning is not uniformly superior; it is superior where there is enough
+labelled data to fit it. Below that threshold the cheaper model is not
+merely competitive — it is better, and it costs a fraction of the
+compute.
 
 ### Why the ensemble loses in Sylhet
 
@@ -150,7 +151,23 @@ geometric boundaries. A per-pixel model has no access to any of it. This
 is the clearest single demonstration in the study that the appropriate
 model depends on the structure of the class being detected.
 
-## 6.5 Cyclical versus permanent disturbance (RQ6)
+### What RQ3's answer does not rest on
+
+Both figures above are scored against Hansen-derived training labels.
+A 40-point stratum was drawn inside the tea-growing upazilas specifically
+to validate them against independent interpretation, and both authors
+interpreted it. They agreed on 12 of 40 points, κ = 0.067 (§6.7).
+
+**That stratum is therefore not used here.** A reference sample whose two
+interpreters agree at chance cannot act as an independent yardstick, and
+reporting an accuracy figure against it would dress a disagreement up as
+a measurement. RQ3's answer is a controlled model-side comparison — E3
+against E4, architecture and data held constant — and it is reported as
+exactly that, with no independent validation behind it. The stratum's
+failure is not a gap in the experiment; it is reported in §7.3 as
+evidence about the class itself.
+
+## 6.5 Cyclical versus permanent disturbance (RQ4)
 
 LandTrendr segmentation of the annual NBR series, 1988–2024, at 30 m over
 Bandarban:
@@ -220,7 +237,7 @@ interpreter judged only 2 to be genuine forest-to-non-forest transitions.
 That is a statement about **Hansen commission error**, and it is arguably
 more interesting than the loss figure would have been.
 
-### Change detection accuracy (RQ4)
+### Change detection accuracy (supporting finding, not a standalone RQ — see §1.4)
 
 F1 on the change class — the headline metric, since overall accuracy is
 uninformative for a minority class:
@@ -251,13 +268,26 @@ points these values carry very large sampling uncertainty. They support a
 
 Cohen's κ on class at T3, against a Gate 4 threshold of 0.75:
 
-| District | Compared points | Raw agreement | κ |
+| Sample | Compared points | Raw agreement | κ |
 |---|---|---|---|
 | Gazipur | 100 | 0.500 | **0.157 ± 0.165** |
 | Sylhet | 180 | 0.439 | **0.038 ± 0.124** |
+| Sylhet plantation stratum | 40 | 0.300 | **0.067 ± 0.189** |
 
-Both fall far below the threshold, and Sylhet's is indistinguishable from
-chance.
+All three fall far below the threshold, and the two Sylhet figures are
+indistinguishable from chance.
+
+The plantation stratum is reported separately rather than folded into
+Sylhet because it is a different sample with a different prevalence: its
+40 points were drawn deliberately inside the tea-growing upazilas, so
+agreement there measures agreement *on tea* rather than on the district
+as a whole. It is the lowest of the three. One interpreter called 25 of
+the 40 points plantation; the other called 14, and called 20 of them
+natural forest. **The stratum is therefore not used to validate RQ3** —
+a reference sample the interpreters cannot agree on cannot serve as an
+independent yardstick, and using it anyway would put a number on RQ3 that
+looks like validation without being one. The consequence is stated in
+§6.4: RQ3's result is a model-side comparison only.
 
 The disagreement is systematic rather than random, and its structure is
 informative. Of Sylhet's 101 disagreements, **75 run in a single
@@ -277,7 +307,7 @@ fixed rule, and in each district one of the two readings makes a densely
 populated agricultural landscape two-thirds natural forest.
 
 The immediate consequence is that §6.6 is provisional. The wider
-significance is discussed in Chapter 8: two trained interpreters working
+significance is discussed in Chapter 7: two trained interpreters working
 from the same written protocol over the same 280 points agreed at
 essentially chance level on where forest begins, which is a measurement
 of how hard this landscape is to interpret rather than a procedural
