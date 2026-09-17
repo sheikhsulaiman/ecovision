@@ -1,0 +1,11 @@
+# LandTrendr segmentation of the annual NBR series, 1988-2024, Bandarban, 30 m.
+# Backfilled from docs/thesis/ch6_results.md sec 6.5 (RQ6) — the GEE run's
+# summary was written straight into the thesis chapter and the pre-defence
+# deck's own table; this file gives src/figures.py something to read so the
+# number is never retyped by hand into plotting code. Rerun src/landtrendr.py
+# to regenerate if the segmentation is redone.
+class,area_ha,share
+stable,371380,0.808
+permanent_conversion,14457,0.0315
+cyclical_disturbance,56235,0.1224
+undetermined,17431,0.0379
