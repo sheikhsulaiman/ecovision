@@ -86,8 +86,21 @@ def main() -> int:
     # Collisions, ignoring shapes that are meant to sit on top of one
     # another: the panel fills, the accent strips and the numbered chips are
     # all deliberate backgrounds.
+    #
+    # Tables are content, not background. They have no text frame, so a
+    # naive "no text means decoration" test skips them -- which is how a
+    # five-row table sat across the footer while this script reported the
+    # poster clean.
     def is_background(shape):
+        if getattr(shape, "has_table", False) and shape.has_table:
+            return False
         return not shape.has_text_frame or not shape.text_frame.text.strip()
+
+    def describe(shape):
+        if getattr(shape, "has_table", False) and shape.has_table:
+            first = shape.table.cell(0, 0).text.strip()
+            return f"[table: {first}]"
+        return shape.text_frame.text.strip().replace("\n", " ")[:32]
 
     for i, (l1, t1, r1, b1, s1) in enumerate(boxes):
         for l2, t2, r2, b2, s2 in boxes[i + 1:]:
@@ -97,10 +110,30 @@ def main() -> int:
             overlap_y = min(b1, b2) - max(t1, t2)
             if overlap_x > 0.3 and overlap_y > 0.18:
                 problems += 1
-                a = s1.text_frame.text.strip().replace("\n", " ")[:32]
-                b = s2.text_frame.text.strip().replace("\n", " ")[:32]
+                a, b = describe(s1), describe(s2)
                 print(f"  COLLISION {overlap_y:5.2f} in  y={max(t1,t2):6.2f}  "
                       f"\"{a}\"  OVER  \"{b}\"")
+
+    # Content that crosses a full-width separator rule. It may collide with
+    # nothing and still look broken: a table hanging below the line that is
+    # supposed to close the columns off reads as a mistake, and this is the
+    # form the footer overflow took twice.
+    rules = sorted(
+        sh.top / EMU_IN for sh in slide.shapes
+        if sh.left is not None
+        and sh.width / EMU_IN > 0.8 * W
+        and sh.height / EMU_IN < 0.12
+        and sh.top / EMU_IN > 2.0
+    )
+    for l, t, r, b, shape in boxes:
+        if (r - l) > 0.8 * W:
+            continue
+        for ry in rules:
+            if t < ry - 0.3 < b and b > ry + 0.05:
+                problems += 1
+                print(f"  CROSSES RULE  {b - ry:5.2f} in below the rule at "
+                      f"y={ry:6.2f}  x={l:5.2f}  \"{describe(shape)}\"")
+                break
 
     print(f"\n{path.name}: {problems} problem(s)")
     return 1 if problems else 0

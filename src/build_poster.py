@@ -458,12 +458,10 @@ def build_focus(size_key: str) -> Path:
     y3 = heading(slide, c3, y, col_w, "Method comparison · RQ2, RQ3",
                  "The right model depends\non the signal", accent=LOSS)
 
-    tf = textbox(slide, c3, y3, col_w, 2.6)
-    para(tf, "Random Forest, a U-Net and a stacked ensemble, scored on spatially "
-             "disjoint test blocks. No model wins everywhere, and the ordering "
-             "tracks training-set size exactly.",
-         size=25, colour=INK, line=1.25, first=True)
-    y3 += 2.35
+    y3 = body(slide, c3, y3, col_w,
+              "Random Forest, a U-Net and a stacked ensemble, scored on "
+              "spatially disjoint test blocks. No model wins everywhere, and "
+              "the ordering tracks training-set size exactly.", size=25) + 0.15
 
     y3 = table(slide, c3, y3, col_w, [
         ["District", "RF", "U-Net", "Ens.", "Patches"],
@@ -474,12 +472,11 @@ def build_focus(size_key: str) -> Path:
     y3 = caption(slide, c3, y3, col_w,
                  "Patch-test macro F1, against Hansen-derived training labels.") + 0.65
 
-    tf = textbox(slide, c3, y3, col_w, 2.6)
-    para(tf, "Tea is a spatial pattern, not a spectral one. Switching only the "
-             "GLCM texture bands in and out — architecture and data held "
-             "constant — moves plantation F1 by 22%, and almost nothing else.",
-         size=25, colour=INK, line=1.25, first=True)
-    y3 += 2.35
+    y3 = body(slide, c3, y3, col_w,
+              "Tea is a spatial pattern, not a spectral one. Switching only "
+              "the GLCM texture bands in and out — architecture and data "
+              "held constant — moves plantation F1 by 22%, and almost "
+              "nothing else.", size=25) + 0.15
 
     y3 = table(slide, c3, y3, col_w, [
         ["Sylhet, plantation F1", "Score"],
@@ -491,11 +488,9 @@ def build_focus(size_key: str) -> Path:
                  "A per-pixel model has no access to planted rows or canopy "
                  "uniformity — the properties that define a tea estate.") + 0.65
 
-    tf = textbox(slide, c3, y3, col_w, 2.2)
-    para(tf, "Areas use the Olofsson stratified estimator with 95% confidence "
-             "intervals, never raw pixel counts.",
-         size=25, colour=INK, line=1.25, first=True)
-    y3 += 1.5
+    y3 = body(slide, c3, y3, col_w,
+              "Areas use the Olofsson stratified estimator with 95% confidence "
+              "intervals, never raw pixel counts.", size=25) + 0.15
 
     y3 = table(slide, c3, y3, col_w, [
         ["Adjusted loss, 1990–2024", "Estimate", "Sig."],
@@ -692,7 +687,8 @@ def build_overview(size_key: str) -> Path:
     ], marker=LOSS) + 0.3
 
     y = section(slide, cx[0], y, col_w, 3, "Study area")
-    y = picture(slide, FIG / "study_area.png", cx[0], y, col_w) + 0.25
+    y = picture(slide, FIG / "study_area.png", cx[0], y,
+            col_w * 0.70) + 0.25
     y = caption(slide, cx[0], y, col_w,
                 "Three districts, 9,827 km² in total — about 10.9 million "
                 "Landsat pixels at 30 m.") + 0.35
@@ -710,7 +706,7 @@ def build_overview(size_key: str) -> Path:
              "audited, zero failures. Epoch anchors T0 1990, T1 2000, T2 2010, "
              "T3 2024; the annual series for segmentation runs from 1988.")
     y = picture(slide, FIG / "scene_availability.png", cx[0], y + 0.2,
-                col_w) + 0.25
+                col_w * 0.86) + 0.25
     y = caption(slide, cx[0], y, col_w,
                 "Usable scenes per district-year. The study starts at 1988 "
                 "because 1985–87 returned none at all — an acquisition gap, "
@@ -721,23 +717,20 @@ def build_overview(size_key: str) -> Path:
     # assessment rests on something the poster never introduces.
     y = body(slide, cx[0], y, col_w,
              "Accuracy is measured against a stratified reference sample, "
-             "interpreted point by point from high-resolution imagery by both "
-             "authors independently. It is the only data here no script can "
-             "regenerate, and the only thing any accuracy figure is measured "
-             "against — the Hansen-derived labels are training data and are "
-             "never used to score a result.")
+             "interpreted independently by both authors. The Hansen-derived "
+             "labels are training data and never score a result.")
     table(slide, cx[0], y + 0.2, col_w, [
         ["Reference sample", "Points"],
         ["Gazipur", "100"],
         ["Sylhet", "180"],
         ["Bandarban", "120"],
         ["Sylhet plantation stratum", "40"],
-    ], col_w=[2.6, 1.0], size=23, row_h=0.64)
+    ], col_w=[2.6, 1.0], size=23, row_h=0.56)
 
     # ====================================== column 2 : method and experiments
     y = section(slide, cx[1], y0, col_w, 5, "Method")
     y = picture(slide, FIG / "pipeline_overview.png", cx[1], y,
-                col_w * 0.54) + 0.3
+                col_w * 0.50) + 0.3
     y = caption(slide, cx[1], y, col_w,
                 "Each stage feeds the next. The accuracy assessment at the end "
                 "is the only thing measured against independent data.") + 0.45
@@ -785,8 +778,8 @@ def build_overview(size_key: str) -> Path:
         ["E7", "Stacked RF + U-Net", "Does combining help?"],
     ], col_w=[0.6, 2.0, 2.3], size=23, row_h=0.64) + 0.3
     caption(slide, cx[1], y, col_w,
-            "All scored against Hansen-derived training labels — model against "
-            "teacher. These are pipeline comparisons, not accuracy.")
+            "Scored against Hansen-derived training labels — model against "
+            "teacher, so these are pipeline comparisons, not accuracy.")
 
     # ========================================= column 3 : results and closing
     y = section(slide, cx[2], y0, col_w, 8, "Results")
@@ -864,7 +857,11 @@ def build_overview(size_key: str) -> Path:
     # RQ4 panel sized to its real contents, column 3 has no room left, and
     # the contributions read perfectly well beside the caveats they are
     # qualified by.
-    fy = H - 7.7
+    # 7.4 rather than 7.7: the columns clear the rule by only a couple of
+    # millimetres at A0, and PowerPoint's reflow need not agree with the
+    # measurement here to the last point. The footer needs about 6.5 in,
+    # so the extra third of an inch comes out of slack, not content.
+    fy = H - 7.4
     rule(slide, MARGIN, fy, W - 2 * MARGIN, INK, 3)
     fy += 0.5
     fcol = (W - 2 * MARGIN - 2 * GUTTER) / 3
