@@ -78,6 +78,72 @@ MARGIN = 1.3
 GUTTER = 0.85
 
 
+# --------------------------------------------------------------- measuring
+#
+# Text height has to be measured, not estimated. python-pptx writes a box
+# and PowerPoint reflows the text inside it at open time; it does not clip,
+# so a paragraph that needs more room than its box simply draws over
+# whatever sits below. Guessing "characters per line" from an average glyph
+# width is close enough for one paragraph and wrong by a line or two after
+# six, which is exactly how sections end up on top of each other.
+#
+# So: load the real font file, wrap greedily on measured word widths, and
+# advance by the line count that comes out.
+
+FONT_FILES = {
+    (SANS, False): "calibri.ttf",
+    (SANS, True): "calibrib.ttf",
+    (SERIF, False): "cambria.ttc",
+    (SERIF, True): "cambriab.ttf",
+    (MONO, False): "consola.ttf",
+    (MONO, True): "consolab.ttf",
+}
+FONT_DIR = Path("C:/Windows/Fonts")
+_font_cache: dict = {}
+
+
+def _font(name, bold, size_pt):
+    """PIL font at the pixel size PowerPoint renders `size_pt` to at 96 dpi."""
+    from PIL import ImageFont
+    px = max(1, int(round(size_pt * 96 / 72)))
+    key = (name, bold, px)
+    if key not in _font_cache:
+        path = FONT_DIR / FONT_FILES[(name, bold)]
+        try:
+            _font_cache[key] = ImageFont.truetype(str(path), px)
+        except Exception:
+            _font_cache[key] = ImageFont.load_default()
+    return _font_cache[key]
+
+
+def line_count(text, width_in, size_pt, *, font=SANS, bold=False):
+    """Lines this text wraps to in a box `width_in` wide. Greedy, like Word.
+
+    Manual breaks are honoured: a headline broken by hand into two lines
+    occupies two lines even where it would have fitted on one.
+    """
+    fnt = _font(font, bold, size_pt)
+    limit = width_in * 96
+    lines = 0
+    for segment in text.split("\n"):
+        lines += 1
+        current = ""
+        for word in segment.split():
+            trial = word if not current else current + " " + word
+            if fnt.getlength(trial) <= limit or not current:
+                current = trial
+            else:
+                lines += 1
+                current = word
+    return lines
+
+
+def text_height(text, width_in, size_pt, *, font=SANS, bold=False, line=1.22):
+    """Height in inches that `text` actually occupies."""
+    return line_count(text, width_in, size_pt, font=font, bold=bold) * \
+        size_pt * line / 72.0
+
+
 def textbox(slide, x, y, w, h, *, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP):
     box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     tf = box.text_frame
@@ -179,6 +245,13 @@ def table(slide, x, y, w, rows, *, col_w, header=True, size=24, row_h=0.62):
     return y + row_h * n_rows
 
 
+def image_ratio(path) -> float:
+    """height / width of an image, so a panel can be sized from its contents."""
+    from PIL import Image
+    with Image.open(path) as im:
+        return im.height / im.width
+
+
 def picture(slide, path, x, y, w):
     """Place scaled to width, returning the bottom edge."""
     from PIL import Image
@@ -190,10 +263,11 @@ def picture(slide, path, x, y, w):
     return y + w * ratio
 
 
-def caption(slide, x, y, w, text):
-    tf = textbox(slide, x, y, w, 0.9)
-    para(tf, text, size=19, colour=INK_FAINT, first=True, line=1.15)
-    return y + 0.34 * (len(text) // int(w * 11) + 1)
+def caption(slide, x, y, w, text, *, size=19):
+    h = text_height(text, w, size, line=1.15)
+    tf = textbox(slide, x, y, w, h)
+    para(tf, text, size=size, colour=INK_FAINT, first=True, line=1.15)
+    return y + h
 
 
 def rescale(slide, factor: float) -> None:
@@ -251,10 +325,14 @@ def build_focus(size_key: str) -> Path:
     block(slide, 0, 0, W, 0.38, LOSS)
 
     y = 1.15
-    tf = textbox(slide, MARGIN, y, W - 2 * MARGIN, 6.0)
-    para(tf, "Most of what looks like deforestation\nin the Chittagong Hills is not deforestation.",
-         size=92, font=SERIF, colour=INK, bold=True, line=0.92, first=True)
-    y += 4.5
+    claim = ("Most of what looks like deforestation\n"
+             "in the Chittagong Hills is not deforestation.")
+    claim_h = text_height(claim, W - 2 * MARGIN, 92, font=SERIF, bold=True,
+                          line=0.92)
+    tf = textbox(slide, MARGIN, y, W - 2 * MARGIN, claim_h)
+    para(tf, claim, size=92, font=SERIF, colour=INK, bold=True, line=0.92,
+         first=True)
+    y += claim_h + 0.55
 
     tf = textbox(slide, MARGIN, y, W - 2 * MARGIN - 9.0, 2.2)
     para(tf, "Forest cover change in three districts of Bangladesh, 1988–2024, "
@@ -509,18 +587,20 @@ def section(slide, x, y, w, number, title, *, accent=LOSS):
 
 
 def body(slide, x, y, w, text, *, size=24, colour=INK):
-    """Paragraph, returning an estimated bottom so the next element clears it."""
-    tf = textbox(slide, x, y, w, 4.0)
+    """Paragraph, returning its true bottom so the next element clears it."""
+    h = text_height(text, w, size, line=1.22)
+    tf = textbox(slide, x, y, w, h)
     para(tf, text, size=size, colour=colour, line=1.22, first=True)
-    chars_per_line = max(1, int(w * 96 / (size * 0.50)))
-    n = len(text) // chars_per_line + 1
-    return y + n * (size * 1.22 / 72.0) + 0.12
+    return y + h + 0.12
 
 
 def bullets(slide, x, y, w, items, *, size=24, marker=RECOVER):
     for head, rest in items:
         block(slide, x, y + 0.22, 0.17, 0.17, marker)
-        tf = textbox(slide, x + 0.45, y, w - 0.45, 2.4)
+        tf = textbox(slide, x + 0.45, y,
+                     w - 0.45,
+                     text_height(head + " " + rest, w - 0.45, size,
+                                 bold=True, line=1.22))
         p = tf.paragraphs[0]
         p.line_spacing = 1.22
         run = p.add_run()
@@ -534,9 +614,10 @@ def bullets(slide, x, y, w, items, *, size=24, marker=RECOVER):
         run2.font.size = Pt(size)
         run2.font.name = SANS
         run2.font.color.rgb = INK_SOFT
-        chars = max(1, int(w * 96 / (size * 0.50)))
-        n = (len(head) + len(rest)) // chars + 1
-        y += n * (size * 1.22 / 72.0) + 0.3
+        # The bold lead-in and the body wrap as one paragraph, so measure
+        # them together at the wider of the two metrics.
+        h = text_height(head + " " + rest, w - 0.45, size, bold=True, line=1.22)
+        y += h + 0.3
     return y
 
 
@@ -556,13 +637,18 @@ def build_overview(size_key: str) -> Path:
 
     # ------------------------------------------------------------- header
     block(slide, 0, 0, W, 0.38, LOSS)
-    tf = textbox(slide, MARGIN, 1.1, W - 2 * MARGIN - 9.2, 3.6)
-    para(tf, "Deep Learning for Deforestation Detection in Bangladesh",
-         size=72, font=SERIF, colour=INK, bold=True, line=0.95, first=True)
-    tf = textbox(slide, MARGIN, 3.95, W - 2 * MARGIN - 9.2, 1.6)
-    para(tf, "A three-district comparison of classification and change "
-             "detection methods using Landsat imagery, 1988–2024",
-         size=31, font=SERIF, colour=INK_SOFT, line=1.15, first=True)
+    title = "Deep Learning for Deforestation Detection in Bangladesh"
+    sub = ("A three-district comparison of classification and change "
+           "detection methods using Landsat imagery, 1988–2024")
+    tw = W - 2 * MARGIN - 9.2
+    th = text_height(title, tw, 72, font=SERIF, bold=True, line=0.95)
+    tf = textbox(slide, MARGIN, 1.1, tw, th)
+    para(tf, title, size=72, font=SERIF, colour=INK, bold=True, line=0.95,
+         first=True)
+    sy = 1.1 + th + 0.3
+    tf = textbox(slide, MARGIN, sy, tw,
+                 text_height(sub, tw, 31, font=SERIF, line=1.15))
+    para(tf, sub, size=31, font=SERIF, colour=INK_SOFT, line=1.15, first=True)
 
     tf = textbox(slide, W - MARGIN - 8.8, 1.25, 8.8, 3.4, align=PP_ALIGN.RIGHT)
     para(tf, "Sheikh Sulaiman Sony", size=25, font=MONO, colour=INK,
@@ -651,7 +737,7 @@ def build_overview(size_key: str) -> Path:
     # ====================================== column 2 : method and experiments
     y = section(slide, cx[1], y0, col_w, 5, "Method")
     y = picture(slide, FIG / "pipeline_overview.png", cx[1], y,
-                col_w * 0.82) + 0.3
+                col_w * 0.54) + 0.3
     y = caption(slide, cx[1], y, col_w,
                 "Each stage feeds the next. The accuracy assessment at the end "
                 "is the only thing measured against independent data.") + 0.45
@@ -677,7 +763,8 @@ def build_overview(size_key: str) -> Path:
              "— the two bands NBR is built from, and NBR is what the Bandarban "
              "result depends on. Local coefficients were adopted per band; NIR "
              "and SWIR2 are left untransformed.", colour=INK_SOFT) + 0.2
-    y = picture(slide, FIG / "harmonisation.png", cx[1], y, col_w) + 0.25
+    y = picture(slide, FIG / "harmonisation.png", cx[1], y,
+            col_w * 0.58) + 0.25
     y = caption(slide, cx[1], y, col_w,
                 "Residual RMSE per band for each candidate transform, adopted "
                 "choice marked. The published coefficients are beaten by the "
@@ -737,50 +824,80 @@ def build_overview(size_key: str) -> Path:
     # RQ4 carries the visual weight: it is the finding the third district
     # exists to produce, and on a poster this dense it would otherwise read
     # as one result among four.
-    bh = 9.4
+    #
+    # The panel height is derived from its contents rather than set by hand.
+    # A hand-set 9.4 in held a map that is 9.1 in tall on its own, so the
+    # caption beneath it drew straight over the next section -- and nothing
+    # in python-pptx complains, because PowerPoint reflows on open.
+    pad = 0.5
+    inner_w = col_w - 2 * pad
+    map_w = inner_w * 0.82
+    map_h = map_w * image_ratio(FIG / "bandarban_jhum_map.png")
+    lead = ("Only 16.4% of the 88,122 ha disturbed in Bandarban is permanent "
+            "conversion. 63.8% is cyclical jhum that regrows; 19.8% is too "
+            "recent to judge.")
+    tail = ("Green is cyclical jhum, red is permanent conversion. A bitemporal "
+            "comparison would have reported roughly four times the "
+            "deforestation that occurred — only the annual trajectory shows "
+            "whether the canopy came back.")
+    lead_h = text_height(lead, inner_w, 25, line=1.22)
+    tail_h = text_height(tail, inner_w, 23, line=1.22)
+    bh = pad + 0.45 + lead_h + 0.35 + map_h + 0.25 + tail_h + pad
+
     block(slide, cx[2], y, col_w, bh, SURFACE, RULE, 1.5)
     block(slide, cx[2], y, col_w, 0.13, LOSS)
-    iy = y + 0.5
-    tfr = textbox(slide, cx[2] + 0.5, iy, col_w - 1.0, 2.4)
+    iy = y + pad
+    tfr = textbox(slide, cx[2] + pad, iy, inner_w, 0.45 + lead_h)
     para(tfr, "RQ4 — THE FINDING", size=21, font=MONO, colour=LOSS,
          bold=True, first=True, space_after=8)
-    para(tfr, "Only 16.4% of the 88,122 ha disturbed in Bandarban is permanent "
-              "conversion. 63.8% is cyclical jhum that regrows; 19.8% is too "
-              "recent to judge.", size=25, colour=INK, line=1.22)
-    iy += 3.0
-    iy = picture(slide, FIG / "bandarban_jhum_map.png", cx[2] + 0.5, iy,
-                 col_w - 1.0) + 0.25
-    tfr2 = textbox(slide, cx[2] + 0.5, iy, col_w - 1.0, 2.2)
-    para(tfr2, "Green is cyclical jhum, red is permanent conversion. A "
-               "bitemporal comparison would have reported roughly four times "
-               "the deforestation that occurred — only the annual trajectory "
-               "shows whether the canopy came back.",
-         size=23, colour=INK_SOFT, line=1.22, first=True)
+    para(tfr, lead, size=25, colour=INK, line=1.22)
+    iy += 0.45 + lead_h + 0.35
+    iy = picture(slide, FIG / "bandarban_jhum_map.png",
+                 cx[2] + pad + (inner_w - map_w) / 2, iy, map_w) + 0.25
+    tfr2 = textbox(slide, cx[2] + pad, iy, inner_w, tail_h)
+    para(tfr2, tail, size=23, colour=INK_SOFT, line=1.22, first=True)
     y += bh + 0.55
 
-    y = section(slide, cx[2], y, col_w, 9, "Contributions")
-    bullets(slide, cx[2], y, col_w, [
-        ("Three mechanisms, not one landscape.",
-         "Varying model and landscape together is what makes the "
-         "class-structure / model-capability interaction visible."),
-        ("A controlled texture ablation.",
-         "Same architecture, texture in and out, everything else held."),
-        ("Permanent separated from cyclical, before any total is reported.",
-         "Using the annual trajectory rather than a date pair."),
-        ("Honest uncertainty.",
-         "Confidence intervals rather than pixel counts, a failing kappa "
-         "reported as measured, negative results alongside positive ones."),
-    ])
-
     # ------------------------------------------------------------- footer
-    fy = H - 6.4
+    #
+    # Contributions live here rather than at the foot of column 3. With the
+    # RQ4 panel sized to its real contents, column 3 has no room left, and
+    # the contributions read perfectly well beside the caveats they are
+    # qualified by.
+    fy = H - 7.7
     rule(slide, MARGIN, fy, W - 2 * MARGIN, INK, 3)
     fy += 0.5
-    fcol = (W - 2 * MARGIN - GUTTER) / 2
+    fcol = (W - 2 * MARGIN - 2 * GUTTER) / 3
 
-    block(slide, MARGIN, fy - 0.28, fcol, 5.1, CAUTION_SOFT)
-    block(slide, MARGIN, fy - 0.28, fcol, 0.11, CAUTION)
-    tf = textbox(slide, MARGIN + 0.5, fy + 0.15, fcol - 1.0, 4.4)
+    tf = textbox(slide, MARGIN, fy, fcol, 6.4)
+    para(tf, "CONTRIBUTIONS", size=21, font=MONO, colour=INK_FAINT, bold=True,
+         first=True, space_after=8)
+    for head, rest in [
+        ("Three mechanisms, not one landscape.",
+         " Varying model and landscape together is what makes the "
+         "class-structure / model-capability interaction visible."),
+        ("A controlled texture ablation.",
+         " Same architecture, texture in and out, everything else held."),
+        ("Permanent separated from cyclical, before any total is reported.",
+         " Using the annual trajectory rather than a date pair."),
+        ("Honest uncertainty.",
+         " Confidence intervals rather than pixel counts, a failing kappa "
+         "reported as measured, negative results alongside positive ones."),
+    ]:
+        pa = tf.add_paragraph()
+        pa.line_spacing = 1.2
+        pa.space_after = Pt(7)
+        r1 = pa.add_run(); r1.text = head
+        r1.font.size = Pt(22); r1.font.name = SANS; r1.font.bold = True
+        r1.font.color.rgb = INK
+        r2 = pa.add_run(); r2.text = rest
+        r2.font.size = Pt(22); r2.font.name = SANS
+        r2.font.color.rgb = INK_SOFT
+
+    px = MARGIN + fcol + GUTTER
+    block(slide, px, fy - 0.28, fcol, 6.4, CAUTION_SOFT)
+    block(slide, px, fy - 0.28, fcol, 0.11, CAUTION)
+    tf = textbox(slide, px + 0.5, fy + 0.15, fcol - 1.0, 5.6)
     para(tf, "PROVISIONAL — READ BEFORE CITING ANY NUMBER", size=21,
          font=MONO, colour=CAUTION, bold=True, first=True, space_after=8)
     para(tf, "Every figure resting on the reference sample is provisional. Two "
@@ -795,8 +912,8 @@ def build_overview(size_key: str) -> Path:
              "from an unmeasured one.",
          size=22, colour=INK, bold=True, line=1.2)
 
-    lx = MARGIN + fcol + GUTTER
-    tf = textbox(slide, lx, fy, fcol, 5.0)
+    lx = MARGIN + 2 * (fcol + GUTTER)
+    tf = textbox(slide, lx, fy, fcol, 6.4)
     para(tf, "LIMITATIONS", size=21, font=MONO, colour=INK_FAINT, bold=True,
          first=True, space_after=8)
     para(tf, "Reference sample reduced to 400 points from a planned 1,650, so "
