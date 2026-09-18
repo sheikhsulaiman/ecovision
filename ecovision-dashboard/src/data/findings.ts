@@ -209,7 +209,8 @@ export const STUDY = {
  * the live embed rather than pointing at a URL that does not resolve.
  */
 export const LINKS = {
-  earthEngineApp: "",
+  earthEngineApp:
+    "https://ecovision-503602.projects.earthengine.app/view/ecovision",
   thesisPdf: "",
   repository: "",
 } as const;

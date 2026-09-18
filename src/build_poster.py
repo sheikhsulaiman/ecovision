@@ -77,6 +77,57 @@ CAUTION_SOFT = RGBColor(0xFB, 0xF3, 0xDE)
 MARGIN = 1.3
 GUTTER = 0.85
 
+# Scan target. Set to "" and the QR block is omitted rather than printed
+# pointing nowhere -- a dead QR on a poster is worse than none, because
+# people try it.
+QR_URL = "https://ecovision-503602.projects.earthengine.app/view/ecovision"
+QR_LABEL = "Explore the maps"
+QR_CAPTION = ("Every epoch as a layer, and the annual trajectory at any pixel "
+              "you click. Runs live on Earth Engine.")
+
+# 2.75 in at A0. Rough rule for QR codes: readable scan distance is about
+# ten times the code's width, so this reads from arm's length, which is
+# what a poster session actually needs. Below about 1.5 in people have to
+# lean in awkwardly and most give up.
+QR_SIZE = 2.75
+
+
+def qr_png(url: str, path: Path) -> Path:
+    """Render `url` as a QR at high error correction.
+
+    ERROR_CORRECT_H tolerates about 30% of the code being damaged, which on
+    a printed poster covers scuffing, a thumb tack through a corner, and the
+    glare that a phone camera gets off laminate.
+    """
+    import qrcode
+    from qrcode.constants import ERROR_CORRECT_H
+
+    code = qrcode.QRCode(error_correction=ERROR_CORRECT_H, box_size=16,
+                         border=2)
+    code.add_data(url)
+    code.make(fit=True)
+    code.make_image(fill_color="black", back_color="white").save(path)
+    return path
+
+
+def qr_block(slide, x, y, w, *, size=QR_SIZE):
+    """QR plus its label. Returns the bottom edge, or `y` if no URL is set."""
+    if not QR_URL:
+        return y
+    png = OUT_DIR / "_qr_earthengine.png"
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    if not png.exists():
+        qr_png(QR_URL, png)
+    slide.shapes.add_picture(str(png), Inches(x), Inches(y),
+                             width=Inches(size), height=Inches(size))
+    tf = textbox(slide, x + size + 0.45, y + 0.12, w - size - 0.45, size)
+    para(tf, QR_LABEL, size=26, font=SERIF, colour=INK, bold=True, first=True,
+         space_after=6)
+    para(tf, QR_CAPTION, size=21, colour=INK_SOFT, line=1.2, space_after=6)
+    para(tf, QR_URL.replace("https://", ""), size=17, font=MONO,
+         colour=INK_FAINT, line=1.2)
+    return y + size
+
 
 # --------------------------------------------------------------- measuring
 #
@@ -510,16 +561,17 @@ def build_focus(size_key: str) -> Path:
 
     fcol = (W - 2 * MARGIN - 2 * GUTTER) / 3
 
-    tf = textbox(slide, MARGIN, fy, fcol, 5.6)
+    method = ("Landsat Collection 2 Level-2 surface reflectance via Google "
+              "Earth Engine. Dry-season composites (1 Nov – 31 Mar), cloud and "
+              "shadow masked, median reduced into a 23-band stack. Train, "
+              "validation and test splits are whole disjoint 10 km blocks, "
+              "never random pixels. LandTrendr segments the annual NBR series "
+              "to separate cyclical disturbance from permanent conversion.")
+    tf = textbox(slide, MARGIN, fy, fcol,
+                 0.42 + text_height(method, fcol, 23, line=1.22))
     para(tf, "METHOD", size=21, font=MONO, colour=INK_FAINT, bold=True,
          first=True, space_after=9)
-    para(tf, "Landsat Collection 2 Level-2 surface reflectance via Google Earth "
-             "Engine. Dry-season composites (1 Nov – 31 Mar), cloud and shadow "
-             "masked, median reduced into a 23-band stack. Train, validation and "
-             "test splits are whole disjoint 10 km blocks, never random pixels. "
-             "LandTrendr segments the annual NBR series to separate cyclical "
-             "disturbance from permanent conversion.",
-         size=23, colour=INK_SOFT, line=1.22)
+    para(tf, method, size=23, colour=INK_SOFT, line=1.22)
 
     tf = textbox(slide, MARGIN + fcol + GUTTER, fy, fcol, 5.6)
     para(tf, "MEASURED, NOT ASSUMED", size=21, font=MONO, colour=INK_FAINT,
@@ -547,6 +599,12 @@ def build_focus(size_key: str) -> Path:
     para(tf, "We report them anyway. An unreported κ is indistinguishable from "
              "an unmeasured one.",
          size=23, colour=INK, bold=True, line=1.22)
+
+    # Under the METHOD column, which is the shortest of the three. Measured
+    # rather than offset by eye: at fy + 4.6 the code ran off the bottom of
+    # the sheet, which the checker catches but a glance would not.
+    method_h = text_height(method, fcol, 23, line=1.22) + 0.42
+    qr_block(slide, MARGIN, fy + method_h + 0.5, fcol)
 
     return finish(prs, slide, size_key, factor, "focus")
 
@@ -910,22 +968,26 @@ def build_overview(size_key: str) -> Path:
          size=22, colour=INK, bold=True, line=1.2)
 
     lx = MARGIN + 2 * (fcol + GUTTER)
-    tf = textbox(slide, lx, fy, fcol, 6.4)
+    lim = ("Reference sample reduced to 400 points from a planned 1,650, so "
+           "loss intervals are wide and two of three districts cannot resolve "
+           "loss from zero. Tea plantation mapping is unsolved on five "
+           "converging lines of evidence. Deep-learning runs are single-seed, "
+           "and applying a 2024-trained classifier to 1990 imagery is an "
+           "untested assumption.")
+    credit = ("Landsat Collection 2 via Google Earth Engine, courtesy of the "
+              "U.S. Geological Survey. Areas after Olofsson et al. (2014); "
+              "segmentation after Kennedy et al. (2010).")
+    lim_h = (0.42 + text_height(lim, fcol, 22, line=1.2) + 0.13
+             + text_height(credit, fcol, 20, line=1.2))
+    tf = textbox(slide, lx, fy, fcol, lim_h)
     para(tf, "LIMITATIONS", size=21, font=MONO, colour=INK_FAINT, bold=True,
          first=True, space_after=8)
-    para(tf, "Reference sample reduced to 400 points from a planned 1,650, so "
-             "loss intervals are wide and two of three districts cannot "
-             "resolve loss from zero. Tea plantation mapping is unsolved on "
-             "five converging lines of evidence, and the digitised layer "
-             "covers roughly 1,300 ha against a district total reported above "
-             "10,000. Deep-learning runs are single-seed. Applying a "
-             "2024-trained classifier to 1990 imagery is an untested "
-             "assumption.",
-         size=22, colour=INK_SOFT, line=1.2, space_after=9)
-    para(tf, "Landsat Collection 2 via Google Earth Engine, courtesy of the "
-             "U.S. Geological Survey. Areas after Olofsson et al. (2014); "
-             "temporal segmentation after Kennedy et al. (2010).",
-         size=20, colour=INK_FAINT, line=1.2)
+    para(tf, lim, size=22, colour=INK_SOFT, line=1.2, space_after=9)
+    para(tf, credit, size=20, colour=INK_FAINT, line=1.2)
+
+    # The QR goes bottom-right, where a reader's eye ends up and where they
+    # can stand close enough to scan without blocking the poster.
+    qr_block(slide, lx, fy + lim_h + 0.45, fcol)
 
     return finish(prs, slide, size_key, factor, "overview")
 

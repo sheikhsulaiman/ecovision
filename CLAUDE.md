@@ -204,8 +204,10 @@ signed off on 2026-09-17**. What actually remains:
 3. `outputs/maps/` is still empty (no GeoTIFF was pulled down), but the
    thesis now has its map: `bandarban_jhum_map.png`, rendered from the
    committed `landtrendr_bandarban` asset and placed in ch6 section 6.5.
-4. The dashboard is written (`gee/07_dashboard.js`) but **not yet
-   published** — paste into the GEE Code Editor and publish the app.
+4. Dashboard published 2026-09-18:
+   https://ecovision-503602.projects.earthengine.app/view/ecovision
+   It is wired into the site (`LINKS.earthEngineApp`) and is the QR target
+   on both posters. Still to do: put the URL in Chapter 1 and the deck.
 5. The thesis has never been compiled to PDF. The authors compile the
    Overleaf zip themselves; no local LaTeX toolchain is installed and
    none is wanted.
@@ -334,10 +336,11 @@ ocite{*}` rather than real
       legend, click-a-pixel annual NDVI/NBR trajectory, per-district
       statistics panel, and a methods-and-limitations block carrying the
       forest definition. AOI assets verified to resolve; JS syntax
-      checked. **Outstanding:** it has to be pasted into the GEE Code
-      Editor and published from there (Apps > Publish app) — that step
-      needs a browser signed in to the project account and cannot be done
-      from here. Put the published URL in Chapter 1 and the deck.
+      checked. **Published 2026-09-18** at
+      https://ecovision-503602.projects.earthengine.app/view/ecovision
+      (verified HTTP 200). Wired into the React site and encoded as the QR
+      target on both posters. Still to do: cite the URL in Chapter 1 and
+      the pre-defence deck.
       Every reference-based number in its panel is labelled provisional
       on screen, for the κ reason. Do not remove that wording.
 - [~] Phase 11 — **substantially drafted.** Seven chapters in
