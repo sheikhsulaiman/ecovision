@@ -1,21 +1,27 @@
-"""A0 conference poster, built from the same numbers as the thesis.
+"""A0 conference posters, built from the same numbers as the thesis.
 
-    python src/build_poster.py
-    python src/build_poster.py --size a1
+    python src/build_poster.py --layout overview
+    python src/build_poster.py --layout focus
+    python src/build_poster.py --layout overview --size a1
 
-Output: outputs/thesis/EcoVision_poster_A0.pptx
+Output: outputs/thesis/EcoVision_poster_{layout}_{size}.pptx
 
-WHAT THIS POSTER CLAIMS
------------------------
-One thing, readable from three metres: most of what looks like
-deforestation in Bandarban is not deforestation. Everything else on the
-poster is evidence for that or context around it.
+TWO LAYOUTS, FOR TWO DIFFERENT ROOMS
+------------------------------------
+**overview** walks the whole project in the order it was run, numbered 1
+to 9: problem, questions, study area, data, method, harmonisation,
+experiments, results, contributions. Use it where the audience expects to
+see the shape of the work -- a departmental poster session, an examiner
+walking the hall with a mark sheet.
 
-This is deliberate. A poster that gives all four research questions equal
-weight is the pre-defence deck printed at A0, and nobody standing in a
-poster hall reads that. The three-mechanism framing carries the rest --
-a reader who takes in only the spine (spectral / spatial / temporal) has
-still got the thesis's actual contribution.
+**focus** claims one thing and spends the whole sheet on it: most of what
+looks like deforestation in Bandarban is not deforestation. Use it where
+the audience is walking past and will give the poster ten seconds.
+
+Neither is the better poster in the abstract. The overview risks being the
+pre-defence deck printed at A0, which is dense and nobody reads end to
+end; the focus risks under-selling RQ2 and RQ3, which are real
+contributions. Pick by room.
 
 TYPOGRAPHY
 ----------
@@ -223,7 +229,8 @@ def rescale(slide, factor: float) -> None:
                             r.font.size = Pt(r.font.size.pt * factor)
 
 
-def build(size_key: str) -> Path:
+def build_focus(size_key: str) -> Path:
+    """One-claim poster. See module docstring."""
     # Always laid out at A0, then scaled as one pass if a smaller sheet was
     # asked for. See rescale().
     W, H = SIZES["a0"]
@@ -468,25 +475,361 @@ def build(size_key: str) -> Path:
              "an unmeasured one.",
          size=23, colour=INK, bold=True, line=1.22)
 
+    return finish(prs, slide, size_key, factor, "focus")
+
+
+def finish(prs, slide, size_key, factor, layout) -> Path:
     if factor != 1.0:
         rescale(slide, factor)
         prs.slide_width = Inches(SIZES[size_key][0])
         prs.slide_height = Inches(SIZES[size_key][1])
-
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out = OUT_DIR / f"EcoVision_poster_{size_key.upper()}.pptx"
+    out = OUT_DIR / f"EcoVision_poster_{layout}_{size_key.upper()}.pptx"
     prs.save(out)
     return out
+
+
+def section(slide, x, y, w, number, title, *, accent=LOSS):
+    """Numbered section head.
+
+    The numbering is not decoration here: this poster walks the pipeline in
+    the order it was actually run, so a reader wanting to know what happened
+    before the models walks backwards from 6 to 5. The focus poster, whose
+    sections are not a sequence, does not number them.
+    """
+    block(slide, x, y, 1.05, 1.05, accent)
+    tfn = textbox(slide, x, y + 0.17, 1.05, 0.9, align=PP_ALIGN.CENTER)
+    para(tfn, str(number), size=34, font=SERIF, colour=SURFACE, bold=True,
+         first=True, align=PP_ALIGN.CENTER)
+    tf = textbox(slide, x + 1.35, y + 0.05, w - 1.35, 1.3)
+    para(tf, title, size=38, font=SERIF, colour=INK, bold=True, line=0.95,
+         first=True)
+    rule(slide, x, y + 1.32, w, RULE, 1.5)
+    return y + 1.72
+
+
+def body(slide, x, y, w, text, *, size=24, colour=INK):
+    """Paragraph, returning an estimated bottom so the next element clears it."""
+    tf = textbox(slide, x, y, w, 4.0)
+    para(tf, text, size=size, colour=colour, line=1.22, first=True)
+    chars_per_line = max(1, int(w * 96 / (size * 0.50)))
+    n = len(text) // chars_per_line + 1
+    return y + n * (size * 1.22 / 72.0) + 0.12
+
+
+def bullets(slide, x, y, w, items, *, size=24, marker=RECOVER):
+    for head, rest in items:
+        block(slide, x, y + 0.22, 0.17, 0.17, marker)
+        tf = textbox(slide, x + 0.45, y, w - 0.45, 2.4)
+        p = tf.paragraphs[0]
+        p.line_spacing = 1.22
+        run = p.add_run()
+        run.text = head + " "
+        run.font.size = Pt(size)
+        run.font.name = SANS
+        run.font.bold = True
+        run.font.color.rgb = INK
+        run2 = p.add_run()
+        run2.text = rest
+        run2.font.size = Pt(size)
+        run2.font.name = SANS
+        run2.font.color.rgb = INK_SOFT
+        chars = max(1, int(w * 96 / (size * 0.50)))
+        n = (len(head) + len(rest)) // chars + 1
+        y += n * (size * 1.22 / 72.0) + 0.3
+    return y
+
+
+def build_overview(size_key: str) -> Path:
+    """The whole project, section by section, in the order it was run."""
+    W, H = SIZES["a0"]
+    factor = SIZES[size_key][0] / SIZES["a0"][0]
+
+    prs = Presentation()
+    prs.slide_width = Inches(W)
+    prs.slide_height = Inches(H)
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    block(slide, 0, 0, W, H, PAPER).shadow.inherit = False
+
+    col_w = (W - 2 * MARGIN - 2 * GUTTER) / 3
+    cx = [MARGIN + i * (col_w + GUTTER) for i in range(3)]
+
+    # ------------------------------------------------------------- header
+    block(slide, 0, 0, W, 0.38, LOSS)
+    tf = textbox(slide, MARGIN, 1.1, W - 2 * MARGIN - 9.2, 3.6)
+    para(tf, "Deep Learning for Deforestation Detection in Bangladesh",
+         size=72, font=SERIF, colour=INK, bold=True, line=0.95, first=True)
+    tf = textbox(slide, MARGIN, 3.95, W - 2 * MARGIN - 9.2, 1.6)
+    para(tf, "A three-district comparison of classification and change "
+             "detection methods using Landsat imagery, 1988–2024",
+         size=31, font=SERIF, colour=INK_SOFT, line=1.15, first=True)
+
+    tf = textbox(slide, W - MARGIN - 8.8, 1.25, 8.8, 3.4, align=PP_ALIGN.RIGHT)
+    para(tf, "Sheikh Sulaiman Sony", size=25, font=MONO, colour=INK,
+         first=True, space_after=4, align=PP_ALIGN.RIGHT)
+    para(tf, "Jalal Uddin Mohammad Akbar", size=25, font=MONO, colour=INK,
+         space_after=10, align=PP_ALIGN.RIGHT)
+    para(tf, "Supervisor: Rubel Sheikh", size=22, font=MONO, colour=INK_SOFT,
+         space_after=4, align=PP_ALIGN.RIGHT)
+    para(tf, "Dept. of Educational Technology & Engineering", size=22,
+         font=MONO, colour=INK_FAINT, space_after=4, align=PP_ALIGN.RIGHT)
+    para(tf, "University of Frontier Technology, Bangladesh", size=22,
+         font=MONO, colour=INK_FAINT, align=PP_ALIGN.RIGHT)
+
+    y0 = 5.95
+    rule(slide, MARGIN, y0, W - 2 * MARGIN, INK, 3)
+    y0 += 0.7
+
+    # ============================================= column 1 : setup and data
+    y = section(slide, cx[0], y0, col_w, 1, "The problem")
+    y = body(slide, cx[0], y, col_w,
+             "Satellite forest monitoring was developed and validated where "
+             "loss is abrupt, permanent and spectrally unambiguous. Where "
+             "that does not hold the failure is silent: a map and a number "
+             "are still produced, and nothing in the output says they are "
+             "wrong.")
+    y = body(slide, cx[0], y + 0.15, col_w,
+             "Bangladesh breaks all three assumptions, in three different "
+             "places. This study measures how much the choice of method "
+             "matters as they fail one by one.") + 0.5
+
+    y = section(slide, cx[0], y, col_w, 2, "Research questions")
+    y = bullets(slide, cx[0], y, col_w, [
+        ("RQ1", "To what extent, and in what spatial patterns, has forest "
+                "cover changed across the three districts?"),
+        ("RQ2", "How does Random Forest compare with U-Net across landscapes "
+                "of differing spectral and spatial complexity?"),
+        ("RQ3", "To what extent does GLCM texture improve discrimination of "
+                "natural forest from tea plantation?"),
+        ("RQ4", "Can annual temporal segmentation separate cyclical jhum from "
+                "permanent conversion, where bitemporal comparison cannot?"),
+    ], marker=LOSS) + 0.3
+
+    y = section(slide, cx[0], y, col_w, 3, "Study area")
+    y = picture(slide, FIG / "study_area.png", cx[0], y, col_w) + 0.25
+    y = caption(slide, cx[0], y, col_w,
+                "Three districts, 9,827 km² in total — about 10.9 million "
+                "Landsat pixels at 30 m.") + 0.35
+    y = table(slide, cx[0], y, col_w, [
+        ["District", "Area", "Loss mechanism"],
+        ["Gazipur", "1,819 km²", "Abrupt conversion"],
+        ["Sylhet", "3,416 km²", "Plantation confusion"],
+        ["Bandarban", "4,592 km²", "Cyclical jhum"],
+    ], col_w=[1.25, 1.0, 2.0], size=23, row_h=0.66) + 0.55
+
+    y = section(slide, cx[0], y, col_w, 4, "Data")
+    y = body(slide, cx[0], y, col_w,
+             "Landsat Collection 2 Level-2 surface reflectance via Google "
+             "Earth Engine — L4/L5 TM, L7 ETM+, L8/L9 OLI. 120 district-years "
+             "audited, zero failures. Epoch anchors T0 1990, T1 2000, T2 2010, "
+             "T3 2024; the annual series for segmentation runs from 1988.")
+    y = picture(slide, FIG / "scene_availability.png", cx[0], y + 0.2,
+                col_w) + 0.25
+    y = caption(slide, cx[0], y, col_w,
+                "Usable scenes per district-year. The study starts at 1988 "
+                "because 1985–87 returned none at all — an acquisition gap, "
+                "not cloud. 2012 and 2013 are entirely Landsat 7 SLC-off.") + 0.5
+
+    # The reference sample is data, and it is the only non-derived data in
+    # the project. Leaving it to the footer would imply the accuracy
+    # assessment rests on something the poster never introduces.
+    y = body(slide, cx[0], y, col_w,
+             "Accuracy is measured against a stratified reference sample, "
+             "interpreted point by point from high-resolution imagery by both "
+             "authors independently. It is the only data here no script can "
+             "regenerate, and the only thing any accuracy figure is measured "
+             "against — the Hansen-derived labels are training data and are "
+             "never used to score a result.")
+    table(slide, cx[0], y + 0.2, col_w, [
+        ["Reference sample", "Points"],
+        ["Gazipur", "100"],
+        ["Sylhet", "180"],
+        ["Bandarban", "120"],
+        ["Sylhet plantation stratum", "40"],
+    ], col_w=[2.6, 1.0], size=23, row_h=0.64)
+
+    # ====================================== column 2 : method and experiments
+    y = section(slide, cx[1], y0, col_w, 5, "Method")
+    y = picture(slide, FIG / "pipeline_overview.png", cx[1], y,
+                col_w * 0.82) + 0.3
+    y = caption(slide, cx[1], y, col_w,
+                "Each stage feeds the next. The accuracy assessment at the end "
+                "is the only thing measured against independent data.") + 0.45
+    y = body(slide, cx[1], y, col_w,
+             "Dry-season composites (1 Nov – 31 Mar), cloud and shadow masked "
+             "on QA_PIXEL, median reduced into a 23-band stack: spectral bands, "
+             "vegetation and moisture indices, NBR, tasselled cap, GLCM texture "
+             "and terrain.") + 0.45
+
+    y = section(slide, cx[1], y, col_w, 6, "Measured, not assumed")
+    y = body(slide, cx[1], y, col_w,
+             "Published cross-sensor harmonisation coefficients, fitted over "
+             "the continental United States, performed worse here than "
+             "applying no correction at all.")
+    y = table(slide, cx[1], y + 0.2, col_w, [
+        ["Transform", "Held-out residual"],
+        ["No correction", "0.01582"],
+        ["Roy et al. (2016)", "0.01680"],
+        ["Locally fitted (OLS)", "*0.01433"],
+    ], col_w=[2.1, 1.5], size=23, row_h=0.66) + 0.3
+    y = body(slide, cx[1], y, col_w,
+             "Roy's values would have degraded NIR by 8.5% and SWIR2 by 69.8% "
+             "— the two bands NBR is built from, and NBR is what the Bandarban "
+             "result depends on. Local coefficients were adopted per band; NIR "
+             "and SWIR2 are left untransformed.", colour=INK_SOFT) + 0.2
+    y = picture(slide, FIG / "harmonisation.png", cx[1], y, col_w) + 0.25
+    y = caption(slide, cx[1], y, col_w,
+                "Residual RMSE per band for each candidate transform, adopted "
+                "choice marked. The published coefficients are beaten by the "
+                "raw data on four of six bands.") + 0.5
+
+    y = section(slide, cx[1], y, col_w, 7, "Experiments")
+    y = body(slide, cx[1], y, col_w,
+             "Train, validation and test splits are whole disjoint 10 km "
+             "blocks, never random pixels — random splitting on spatially "
+             "autocorrelated data inflates accuracy silently. 706 patches at "
+             "128 px, balanced on forest-loss share.") + 0.2
+    y = table(slide, cx[1], y, col_w, [
+        ["ID", "Model", "Question"],
+        ["E1", "Random Forest", "Baseline"],
+        ["E2", "E1 + terrain", "Does terrain help?"],
+        ["E3", "U-Net, 23 bands", "Deep learning baseline"],
+        ["E4", "U-Net, no texture", "RQ3 ablation"],
+        ["E7", "Stacked RF + U-Net", "Does combining help?"],
+    ], col_w=[0.6, 2.0, 2.3], size=23, row_h=0.64) + 0.3
+    caption(slide, cx[1], y, col_w,
+            "All scored against Hansen-derived training labels — model against "
+            "teacher. These are pipeline comparisons, not accuracy.")
+
+    # ========================================= column 3 : results and closing
+    y = section(slide, cx[2], y0, col_w, 8, "Results")
+
+    y = body(slide, cx[2], y, col_w,
+             "RQ2 — no model wins everywhere, and the ordering tracks "
+             "training-set size exactly.") + 0.05
+    y = table(slide, cx[2], y, col_w, [
+        ["District", "RF", "U-Net", "Ens.", "Patches"],
+        ["Gazipur", "0.413", "0.316", "*0.444", "55"],
+        ["Sylhet", "0.503", "*0.590", "0.519", "167"],
+        ["Bandarban", "0.463", "0.461", "*0.475", "260"],
+    ], col_w=[1.5, 0.85, 0.9, 0.85, 1.0], size=23, row_h=0.64) + 0.45
+
+    y = body(slide, cx[2], y, col_w,
+             "RQ3 — texture moves plantation F1 by 22%, and almost nothing "
+             "else. Tea is a spatial pattern, not a spectral one.") + 0.05
+    y = table(slide, cx[2], y, col_w, [
+        ["Sylhet, plantation F1", "Score"],
+        ["U-Net with texture", "*0.452"],
+        ["U-Net without texture", "0.370"],
+        ["Random Forest (per-pixel)", "0.029"],
+    ], col_w=[2.6, 1.0], size=23, row_h=0.64) + 0.45
+
+    y = body(slide, cx[2], y, col_w,
+             "RQ1 — areas use the Olofsson stratified estimator with 95% "
+             "confidence intervals, never raw pixel counts.") + 0.05
+    y = table(slide, cx[2], y, col_w, [
+        ["Adjusted loss, 1990–2024", "Estimate", "Sig."],
+        ["Gazipur", "443 ± 849 ha", "no"],
+        ["Sylhet", "5,547 ± 10,755 ha", "no"],
+        ["Bandarban", "*71,011 ± 41,629 ha", "*yes"],
+    ], col_w=[1.5, 1.9, 0.6], size=23, row_h=0.64) + 0.5
+
+    # RQ4 carries the visual weight: it is the finding the third district
+    # exists to produce, and on a poster this dense it would otherwise read
+    # as one result among four.
+    bh = 9.4
+    block(slide, cx[2], y, col_w, bh, SURFACE, RULE, 1.5)
+    block(slide, cx[2], y, col_w, 0.13, LOSS)
+    iy = y + 0.5
+    tfr = textbox(slide, cx[2] + 0.5, iy, col_w - 1.0, 2.4)
+    para(tfr, "RQ4 — THE FINDING", size=21, font=MONO, colour=LOSS,
+         bold=True, first=True, space_after=8)
+    para(tfr, "Only 16.4% of the 88,122 ha disturbed in Bandarban is permanent "
+              "conversion. 63.8% is cyclical jhum that regrows; 19.8% is too "
+              "recent to judge.", size=25, colour=INK, line=1.22)
+    iy += 3.0
+    iy = picture(slide, FIG / "bandarban_jhum_map.png", cx[2] + 0.5, iy,
+                 col_w - 1.0) + 0.25
+    tfr2 = textbox(slide, cx[2] + 0.5, iy, col_w - 1.0, 2.2)
+    para(tfr2, "Green is cyclical jhum, red is permanent conversion. A "
+               "bitemporal comparison would have reported roughly four times "
+               "the deforestation that occurred — only the annual trajectory "
+               "shows whether the canopy came back.",
+         size=23, colour=INK_SOFT, line=1.22, first=True)
+    y += bh + 0.55
+
+    y = section(slide, cx[2], y, col_w, 9, "Contributions")
+    bullets(slide, cx[2], y, col_w, [
+        ("Three mechanisms, not one landscape.",
+         "Varying model and landscape together is what makes the "
+         "class-structure / model-capability interaction visible."),
+        ("A controlled texture ablation.",
+         "Same architecture, texture in and out, everything else held."),
+        ("Permanent separated from cyclical, before any total is reported.",
+         "Using the annual trajectory rather than a date pair."),
+        ("Honest uncertainty.",
+         "Confidence intervals rather than pixel counts, a failing kappa "
+         "reported as measured, negative results alongside positive ones."),
+    ])
+
+    # ------------------------------------------------------------- footer
+    fy = H - 6.4
+    rule(slide, MARGIN, fy, W - 2 * MARGIN, INK, 3)
+    fy += 0.5
+    fcol = (W - 2 * MARGIN - GUTTER) / 2
+
+    block(slide, MARGIN, fy - 0.28, fcol, 5.1, CAUTION_SOFT)
+    block(slide, MARGIN, fy - 0.28, fcol, 0.11, CAUTION)
+    tf = textbox(slide, MARGIN + 0.5, fy + 0.15, fcol - 1.0, 4.4)
+    para(tf, "PROVISIONAL — READ BEFORE CITING ANY NUMBER", size=21,
+         font=MONO, colour=CAUTION, bold=True, first=True, space_after=8)
+    para(tf, "Every figure resting on the reference sample is provisional. Two "
+             "trained interpreters working from the same written protocol "
+             "agreed at close to chance on where forest begins: Cohen's κ of "
+             "0.157 in Gazipur and 0.038 in Sylhet, against a 0.75 threshold. "
+             "On a 40-point stratum drawn inside the tea-growing upazilas it "
+             "was 0.067, so that stratum is reported as unusable for "
+             "validation rather than used.",
+         size=22, colour=INK_SOFT, line=1.2, space_after=7)
+    para(tf, "We report them anyway. An unreported κ is indistinguishable "
+             "from an unmeasured one.",
+         size=22, colour=INK, bold=True, line=1.2)
+
+    lx = MARGIN + fcol + GUTTER
+    tf = textbox(slide, lx, fy, fcol, 5.0)
+    para(tf, "LIMITATIONS", size=21, font=MONO, colour=INK_FAINT, bold=True,
+         first=True, space_after=8)
+    para(tf, "Reference sample reduced to 400 points from a planned 1,650, so "
+             "loss intervals are wide and two of three districts cannot "
+             "resolve loss from zero. Tea plantation mapping is unsolved on "
+             "five converging lines of evidence, and the digitised layer "
+             "covers roughly 1,300 ha against a district total reported above "
+             "10,000. Deep-learning runs are single-seed. Applying a "
+             "2024-trained classifier to 1990 imagery is an untested "
+             "assumption.",
+         size=22, colour=INK_SOFT, line=1.2, space_after=9)
+    para(tf, "Landsat Collection 2 via Google Earth Engine, courtesy of the "
+             "U.S. Geological Survey. Areas after Olofsson et al. (2014); "
+             "temporal segmentation after Kennedy et al. (2010).",
+         size=20, colour=INK_FAINT, line=1.2)
+
+    return finish(prs, slide, size_key, factor, "overview")
+
+
+LAYOUTS = {"focus": build_focus, "overview": build_overview}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--size", choices=sorted(SIZES), default="a0")
+    parser.add_argument("--layout", choices=sorted(LAYOUTS), default="focus",
+                        help="focus: one claim, read across a hall. "
+                             "overview: the whole project, section by section.")
     args = parser.parse_args()
-    out = build(args.size)
+    out = LAYOUTS[args.layout](args.size)
     W, H = SIZES[args.size]
     print(f"wrote {out.relative_to(REPO)}")
-    print(f"  {args.size.upper()} portrait, {W:.2f} x {H:.2f} in "
+    print(f"  {args.layout}, {args.size.upper()} portrait, {W:.2f} x {H:.2f} in "
           f"({W * 25.4:.0f} x {H * 25.4:.0f} mm)")
     print("  Print at 100%. Do not let the shop 'fit to page' -- that rescales "
           "the type and the 26 pt body text stops being 26 pt.")
