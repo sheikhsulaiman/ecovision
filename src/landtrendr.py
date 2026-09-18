@@ -183,6 +183,39 @@ def _grouped_area(image: ee.Image, aoi: ee.Geometry, scale: int):
     )
 
 
+def disturbance_by_year(image: ee.Image, aoi: ee.Geometry, scale: int) -> dict:
+    """Disturbed area per year per class, from the trough_year band.
+
+    The classified map says how much of the district ended up in each class;
+    this says *when* each pixel was disturbed, which is the only view that
+    shows the jhum cycle as a cycle rather than as a total. Stable pixels
+    have no disturbance year and are excluded.
+
+    trough_year is stored float (the asset is written toFloat), so values
+    come back as 2023.94 rather than 2024 and have to be rounded before
+    grouping or every year lands in its own bucket.
+    """
+    year = image.select("trough_year").round().toInt()
+    out: dict[str, dict[int, float]] = {}
+    for code in (1, 2, 3):
+        masked = year.updateMask(image.select("class").eq(code))
+        grouped = (
+            ee.Image.pixelArea()
+            .addBands(masked)
+            .reduceRegion(
+                reducer=ee.Reducer.sum().group(groupField=1, groupName="year"),
+                geometry=aoi, scale=scale, maxPixels=int(1e10),
+                bestEffort=True)
+            .getInfo()
+        )
+        out[CLASSES[code]] = {
+            int(g["year"]): float(g["sum"]) / 1e4
+            for g in grouped.get("groups", [])
+            if pp.START_YEAR <= int(g["year"]) <= pp.END_YEAR
+        }
+    return out
+
+
 def asset_id(district: str) -> str:
     return f"{pp.ASSET_ROOT}landtrendr_{district}"
 

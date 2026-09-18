@@ -447,6 +447,58 @@ def fig_bandarban_disturbance() -> None:
     _save(fig, "bandarban_disturbance.png")
 
 
+def fig_bandarban_by_year() -> None:
+    """Disturbed area per year, split by class — the RQ4 result as a series.
+
+    The class totals say how much; this says when, and it is the only view
+    in which the jhum cycle looks like a cycle. It also makes the method's
+    one irreducible limitation visible rather than footnoted: everything
+    from 2019 on is `undetermined`, because a plot cleared within
+    RECOVERY_WINDOW years of the series end has not had time to regrow and
+    cannot be told from permanent conversion.
+    """
+    path = TABLES / "landtrendr_bandarban_by_year.csv"
+    if _missing(path, "src/landtrendr.py --from-asset --by-year"):
+        return
+    table = pd.read_csv(path)
+
+    series = [
+        ("cyclical_disturbance_ha", "cyclical jhum", "#2f6f4f"),
+        ("permanent_conversion_ha", "permanent conversion", "#d1495b"),
+        ("undetermined_ha", "undetermined (too recent to judge)", "#c3c9d1"),
+    ]
+
+    fig, ax = plt.subplots(figsize=(9.4, 3.5))
+    bottom = np.zeros(len(table))
+    for column, label, colour in series:
+        ax.bar(table["year"], table[column], bottom=bottom, width=0.78,
+               label=label, color=colour, edgecolor="white", linewidth=0.3)
+        bottom += table[column].to_numpy()
+
+    # The boundary is a property of the method, not of the landscape, so it
+    # is drawn rather than left for the reader to infer from the colours.
+    first_undetermined = table.loc[table["undetermined_ha"] > 0, "year"].min()
+    ax.axvline(first_undetermined - 0.5, color="#888888", linewidth=1.1,
+               linestyle="--")
+    # Set low and on two lines, in the gap above the small post-2018 bars.
+    # Placed at the top it ran straight through the final-year column, which
+    # is the tallest on the chart.
+    ax.text(first_undetermined + 0.1, ax.get_ylim()[1] * 0.52,
+            "recovery not\nyet judgeable", fontsize=8.5, color="#666666",
+            va="top", linespacing=1.25)
+
+    ax.set_ylabel("disturbed area (ha)", fontsize=9.5)
+    ax.set_xlim(pp.START_YEAR - 0.8, pp.END_YEAR + 0.8)
+    ax.tick_params(labelsize=9)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="y", color="#e4eaef", linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.legend(frameon=False, fontsize=9, loc="upper left", ncol=1)
+
+    fig.tight_layout()
+    _save(fig, "bandarban_disturbance_by_year.png")
+
+
 def fig_bandarban_jhum_map() -> None:
     """The permanent-vs-cyclical map behind the RQ4 table — Chapter 6 §6.5.
 
@@ -634,6 +686,7 @@ FIGURES_AVAILABLE = {
     "bandarban-disturbance": fig_bandarban_disturbance,
     "adjusted-loss": fig_adjusted_loss,
     "bandarban-jhum-map": fig_bandarban_jhum_map,
+    "bandarban-by-year": fig_bandarban_by_year,
     "pipeline-overview": fig_pipeline_overview,
 }
 

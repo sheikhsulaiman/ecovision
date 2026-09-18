@@ -496,13 +496,20 @@ def build_focus(size_key: str) -> Path:
         ["Undetermined", "17,431 ha", "3.79%"],
     ], col_w=[2.1, 1.25, 0.85], size=25, row_h=0.72) + 0.42
 
-    tf = textbox(slide, c2, y2, col_w, 3.4)
-    para(tf, "Undetermined is disturbance too close to the end of the series to "
-             "judge recovery. It is reported separately rather than folded into "
-             "either class — a plot cleared in 2022 has not had time to regrow, "
-             "and calling it permanent would inflate the headline figure with "
-             "fallows that simply have not come back yet.",
-         size=25, colour=INK_SOFT, line=1.25, first=True)
+    # Kept to two lines. The chart below now carries the rest of this
+    # argument, and says it better than the paragraph did: the grey block
+    # is visibly the tail of the series, not a scatter of hard cases.
+    y2 = body(slide, c2, y2, col_w,
+              "Undetermined is disturbance too close to the end of the series "
+              "to judge recovery — a plot cleared in 2022 has not had time to "
+              "regrow, and calling it permanent would inflate the headline.",
+              size=25, colour=INK_SOFT) + 0.2
+
+    y2 = picture(slide, FIG / "bandarban_disturbance_by_year.png",
+                 c2, y2, col_w) + 0.2
+    caption(slide, c2, y2, col_w,
+            "Disturbance per year. The final column is the tallest and the "
+            "least informative — it is almost entirely undetermined.")
 
     # ------------------------------------------ column 3 : does the model matter
     c3 = col_x[2]
@@ -891,9 +898,17 @@ def build_overview(size_key: str) -> Path:
             "comparison would have reported roughly four times the "
             "deforestation that occurred — only the annual trajectory shows "
             "whether the canopy came back.")
+    ts_w = inner_w
+    ts_h = ts_w * image_ratio(FIG / "bandarban_disturbance_by_year.png")
+    ts_cap = ("When it happened. Green is cyclical jhum, red permanent "
+              "conversion; grey is disturbance too close to the series end "
+              "to judge, which is why the final year is the tallest column "
+              "and the least informative.")
     lead_h = text_height(lead, inner_w, 25, line=1.22)
     tail_h = text_height(tail, inner_w, 23, line=1.22)
-    bh = pad + 0.45 + lead_h + 0.35 + map_h + 0.25 + tail_h + pad
+    ts_cap_h = text_height(ts_cap, inner_w, 21, line=1.22)
+    bh = (pad + 0.45 + lead_h + 0.35 + map_h + 0.25 + tail_h
+          + 0.45 + ts_h + 0.2 + ts_cap_h + pad)
 
     block(slide, cx[2], y, col_w, bh, SURFACE, RULE, 1.5)
     block(slide, cx[2], y, col_w, 0.13, LOSS)
@@ -907,6 +922,12 @@ def build_overview(size_key: str) -> Path:
                  cx[2] + pad + (inner_w - map_w) / 2, iy, map_w) + 0.25
     tfr2 = textbox(slide, cx[2] + pad, iy, inner_w, tail_h)
     para(tfr2, tail, size=23, colour=INK_SOFT, line=1.22, first=True)
+
+    iy += tail_h + 0.45
+    iy = picture(slide, FIG / "bandarban_disturbance_by_year.png",
+                 cx[2] + pad, iy, ts_w) + 0.2
+    tfr3 = textbox(slide, cx[2] + pad, iy, inner_w, ts_cap_h)
+    para(tfr3, ts_cap, size=21, colour=INK_FAINT, line=1.22, first=True)
     y += bh + 0.55
 
     # ------------------------------------------------------------- footer
