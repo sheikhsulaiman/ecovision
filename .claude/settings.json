@@ -6,7 +6,17 @@
       "Bash(xargs echo \"  patches so far:\")",
       "Bash(venv/Scripts/python.exe -c ' *)",
       "Bash(./venv/Scripts/python.exe -c ' *)",
-      "Bash(./venv/Scripts/python.exe src/subsample_reference.py --write)"
+      "Bash(./venv/Scripts/python.exe src/subsample_reference.py --write)",
+      "Bash(python3 -c ' *)",
+      "Bash(git mv *)",
+      "Bash(mv docs/thesis/ch8_discussion.md docs/thesis/ch7_discussion.md)",
+      "WebFetch(domain:www.semanticscholar.org)",
+      "Bash(npm --version)",
+      "Bash(awk '{printf \"%-40s %7.1f KB\\\\n\", $NF, $5/1024}')",
+      "Read(//tmp/**)",
+      "Read(//d/tmp/**)",
+      "Bash(timeout 900 \"./venv/Scripts/python.exe\" src/export_trajectories.py)",
+      "Bash(grep -v \"done$\")"
     ]
   }
 }
