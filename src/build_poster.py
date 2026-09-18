@@ -1,0 +1,497 @@
+"""A0 conference poster, built from the same numbers as the thesis.
+
+    python src/build_poster.py
+    python src/build_poster.py --size a1
+
+Output: outputs/thesis/EcoVision_poster_A0.pptx
+
+WHAT THIS POSTER CLAIMS
+-----------------------
+One thing, readable from three metres: most of what looks like
+deforestation in Bandarban is not deforestation. Everything else on the
+poster is evidence for that or context around it.
+
+This is deliberate. A poster that gives all four research questions equal
+weight is the pre-defence deck printed at A0, and nobody standing in a
+poster hall reads that. The three-mechanism framing carries the rest --
+a reader who takes in only the spine (spectral / spatial / temporal) has
+still got the thesis's actual contribution.
+
+TYPOGRAPHY
+----------
+Cambria and Calibri, matching docs/EcoVision_PreDefence.pptx, so the
+poster and the deck read as one set of materials. Both ship with Office
+on every machine a print shop is likely to use -- a poster that
+substitutes its fonts at the printer is a poster with broken line breaks.
+
+Sizes follow normal poster practice rather than screen practice: body
+text at 26 pt is about the minimum that reads at 1.5 m, and the headline
+figure is set large enough to carry across the hall.
+
+NUMBERS
+-------
+Rule 8. Every figure here is read from outputs/tables/ or from the
+chapters, and the small charts are rebuilt as native PowerPoint tables
+rather than upscaled PNGs -- a 3.95-inch sparkline blown up to a 10-inch
+poster column is a blurry sparkline.
+"""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from pptx import Presentation
+from pptx.dml.color import RGBColor
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.util import Emu, Inches, Pt
+
+REPO = Path(__file__).resolve().parents[1]
+FIG = REPO / "outputs" / "figures"
+OUT_DIR = REPO / "outputs" / "thesis"
+
+# ISO paper, portrait, in inches.
+SIZES = {"a0": (33.11, 46.81), "a1": (23.39, 33.11)}
+
+SERIF = "Cambria"
+SANS = "Calibri"
+MONO = "Consolas"
+
+INK = RGBColor(0x11, 0x16, 0x1C)
+INK_SOFT = RGBColor(0x48, 0x55, 0x5F)
+INK_FAINT = RGBColor(0x75, 0x83, 0x8D)
+PAPER = RGBColor(0xF4, 0xF6, 0xF8)
+SURFACE = RGBColor(0xFF, 0xFF, 0xFF)
+RULE = RGBColor(0xD5, 0xDD, 0xE4)
+LOSS = RGBColor(0xC3, 0x3C, 0x54)
+RECOVER = RGBColor(0x2F, 0x6F, 0x4F)
+CAUTION = RGBColor(0xB8, 0x86, 0x0B)
+CAUTION_SOFT = RGBColor(0xFB, 0xF3, 0xDE)
+
+MARGIN = 1.3
+GUTTER = 0.85
+
+
+def textbox(slide, x, y, w, h, *, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP):
+    box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    tf.vertical_anchor = anchor
+    tf.paragraphs[0].alignment = align
+    return tf
+
+
+def para(tf, text, *, size, font=SANS, colour=INK, bold=False, italic=False,
+         space_after=0, space_before=0, line=None, first=False, align=None):
+    p = tf.paragraphs[0] if first else tf.add_paragraph()
+    if align is not None:
+        p.alignment = align
+    p.space_after = Pt(space_after)
+    p.space_before = Pt(space_before)
+    if line:
+        p.line_spacing = line
+    run = p.add_run()
+    run.text = text
+    run.font.size = Pt(size)
+    run.font.name = font
+    run.font.bold = bold
+    run.font.italic = italic
+    run.font.color.rgb = colour
+    return p
+
+
+def block(slide, x, y, w, h, fill, line=None, line_w=1.0):
+    from pptx.enum.shapes import MSO_SHAPE
+    shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(x), Inches(y),
+                                    Inches(w), Inches(h))
+    shape.shadow.inherit = False
+    if fill is None:
+        shape.fill.background()
+    else:
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = fill
+    if line is None:
+        shape.line.fill.background()
+    else:
+        shape.line.color.rgb = line
+        shape.line.width = Pt(line_w)
+    shape.text_frame.word_wrap = True
+    return shape
+
+
+def rule(slide, x, y, w, colour=RULE, weight=1.5):
+    block(slide, x, y, w, weight / 72.0, colour)
+
+
+def heading(slide, x, y, w, eyebrow, title, *, accent=INK):
+    tf = textbox(slide, x, y, w, 1.9)
+    para(tf, eyebrow.upper(), size=22, font=MONO, colour=accent, first=True,
+         space_after=6)
+    para(tf, title, size=44, font=SERIF, colour=INK, bold=True, line=0.95)
+    return y + 0.45 + 0.5 * (title.count("\n") + 1) + 1.15
+
+
+def table(slide, x, y, w, rows, *, col_w, header=True, size=24, row_h=0.62):
+    """Native PowerPoint table -- stays sharp at poster scale, unlike an
+    upscaled PNG of the same chart."""
+    n_rows, n_cols = len(rows), len(rows[0])
+    shape = slide.shapes.add_table(n_rows, n_cols, Inches(x), Inches(y),
+                                    Inches(w), Inches(row_h * n_rows))
+    tbl = shape.table
+    tbl.first_row = header
+    tbl.horz_banding = False
+    total = sum(col_w)
+    for i, frac in enumerate(col_w):
+        tbl.columns[i].width = Emu(int(Inches(w) * frac / total))
+    for r, row in enumerate(rows):
+        tbl.rows[r].height = Inches(row_h)
+        for c, value in enumerate(row):
+            cell = tbl.cell(r, c)
+            cell.margin_left = Inches(0.12)
+            cell.margin_right = Inches(0.12)
+            cell.margin_top = Inches(0.04)
+            cell.margin_bottom = Inches(0.04)
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = SURFACE
+            tf = cell.text_frame
+            tf.word_wrap = True
+            p = tf.paragraphs[0]
+            p.alignment = PP_ALIGN.RIGHT if (c > 0 and r > 0) else PP_ALIGN.LEFT
+            run = p.add_run()
+            emphasis = value.startswith("*")
+            run.text = value[1:] if emphasis else value
+            run.font.size = Pt(size)
+            run.font.name = MONO if (c > 0 and r > 0) else SANS
+            run.font.bold = (r == 0 and header) or emphasis
+            run.font.color.rgb = (
+                INK_FAINT if (r == 0 and header)
+                else RECOVER if emphasis
+                else INK
+            )
+    return y + row_h * n_rows
+
+
+def picture(slide, path, x, y, w):
+    """Place scaled to width, returning the bottom edge."""
+    from PIL import Image
+    with Image.open(path) as im:
+        ratio = im.height / im.width
+    pic = slide.shapes.add_picture(str(path), Inches(x), Inches(y),
+                                    width=Inches(w))
+    del pic
+    return y + w * ratio
+
+
+def caption(slide, x, y, w, text):
+    tf = textbox(slide, x, y, w, 0.9)
+    para(tf, text, size=19, colour=INK_FAINT, first=True, line=1.15)
+    return y + 0.34 * (len(text) // int(w * 11) + 1)
+
+
+def rescale(slide, factor: float) -> None:
+    """Scale every shape and every run on the slide by `factor`.
+
+    The layout below is written in A0 inches throughout. Scaling the canvas
+    without scaling its contents leaves A0 coordinates on a smaller sheet,
+    which puts the footer four inches past the bottom edge -- and PowerPoint
+    does not clip, so it looks like a layout choice rather than a bug.
+    Doing it as one pass afterwards keeps a single set of coordinates to
+    reason about instead of a scale factor threaded through sixty numbers.
+    """
+    for shape in slide.shapes:
+        if shape.left is not None:
+            shape.left = Emu(int(shape.left * factor))
+            shape.top = Emu(int(shape.top * factor))
+            shape.width = Emu(int(shape.width * factor))
+            shape.height = Emu(int(shape.height * factor))
+        if shape.has_text_frame:
+            for p in shape.text_frame.paragraphs:
+                for r in p.runs:
+                    if r.font.size is not None:
+                        r.font.size = Pt(r.font.size.pt * factor)
+        if getattr(shape, "has_table", False) and shape.has_table:
+            for row in shape.table.rows:
+                row.height = Emu(int(row.height * factor))
+            for col in shape.table.columns:
+                col.width = Emu(int(col.width * factor))
+            for cell in [c for row in shape.table.rows for c in row.cells]:
+                for p in cell.text_frame.paragraphs:
+                    for r in p.runs:
+                        if r.font.size is not None:
+                            r.font.size = Pt(r.font.size.pt * factor)
+
+
+def build(size_key: str) -> Path:
+    # Always laid out at A0, then scaled as one pass if a smaller sheet was
+    # asked for. See rescale().
+    W, H = SIZES["a0"]
+    factor = SIZES[size_key][0] / SIZES["a0"][0]
+
+    prs = Presentation()
+    prs.slide_width = Inches(W)
+    prs.slide_height = Inches(H)
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+    bg = block(slide, 0, 0, W, H, PAPER)
+    bg.shadow.inherit = False
+
+    col_w = (W - 2 * MARGIN - 2 * GUTTER) / 3
+    col_x = [MARGIN + i * (col_w + GUTTER) for i in range(3)]
+
+    # ---------------------------------------------------------------- header
+    block(slide, 0, 0, W, 0.38, LOSS)
+
+    y = 1.15
+    tf = textbox(slide, MARGIN, y, W - 2 * MARGIN, 6.0)
+    para(tf, "Most of what looks like deforestation\nin the Chittagong Hills is not deforestation.",
+         size=92, font=SERIF, colour=INK, bold=True, line=0.92, first=True)
+    y += 4.5
+
+    tf = textbox(slide, MARGIN, y, W - 2 * MARGIN - 9.0, 2.2)
+    para(tf, "Forest cover change in three districts of Bangladesh, 1988–2024, "
+             "measured from Landsat — and what it takes to measure it correctly.",
+         size=34, font=SERIF, colour=INK_SOFT, line=1.15, first=True)
+
+    tf = textbox(slide, W - MARGIN - 8.6, y, 8.6, 2.4, align=PP_ALIGN.RIGHT)
+    para(tf, "Sheikh Sulaiman Sony  ·  Jalal Uddin Mohammad Akbar",
+         size=23, font=MONO, colour=INK, first=True, space_after=5,
+         align=PP_ALIGN.RIGHT)
+    para(tf, "Supervisor: Rubel Sheikh", size=21, font=MONO, colour=INK_SOFT,
+         space_after=5, align=PP_ALIGN.RIGHT)
+    para(tf, "Dept. of Educational Technology & Engineering", size=21,
+         font=MONO, colour=INK_FAINT, space_after=5, align=PP_ALIGN.RIGHT)
+    para(tf, "University of Frontier Technology, Bangladesh", size=21,
+         font=MONO, colour=INK_FAINT, align=PP_ALIGN.RIGHT)
+
+    y += 2.55
+    rule(slide, MARGIN, y, W - 2 * MARGIN, INK, 3)
+    y += 0.75
+
+    # ------------------------------------------------------------ claim band
+    band_h = 6.1
+    block(slide, MARGIN, y, W - 2 * MARGIN, band_h, SURFACE, RULE, 1.5)
+    block(slide, MARGIN, y, W - 2 * MARGIN, 0.13, LOSS)
+
+    inner = y + 0.75
+    tf = textbox(slide, MARGIN + 0.9, inner, 9.2, 4.6)
+    para(tf, "16.4%", size=150, font=SERIF, colour=LOSS, bold=True, line=0.85,
+         first=True)
+    para(tf, "of disturbed land is\npermanent conversion",
+         size=27, colour=INK_SOFT, line=1.15, space_before=8)
+
+    tf = textbox(slide, MARGIN + 11.0, inner, W - 2 * MARGIN - 12.8, 4.6)
+    # "The rest is jhum" would be wrong: 63.8% is cyclical and 19.8% is
+    # undetermined. Splitting them here keeps the headline honest, and the
+    # undetermined class is explained in full in the column below.
+    para(tf, "Of 88,122 ha disturbed in Bandarban since 1988, only a sixth is "
+             "permanent. Most of the rest — 63.8% — is shifting cultivation, "
+             "jhum: cleared, cropped and left to regrow on a five-to-seven year "
+             "cycle. A further 19.8% is too recent to judge either way.",
+         size=30, colour=INK, line=1.25, first=True, space_after=13)
+    para(tf, "A two-date comparison cannot tell those apart. It catches the cycle "
+             "mid-swing and reports loss, gain, or nothing at all depending only "
+             "on when the two dates fall. Read that way, this district shows "
+             "roughly four times the deforestation that actually occurred.",
+         size=30, colour=INK, line=1.25, space_after=13)
+    para(tf, "Only the annual trajectory shows whether the canopy came back.",
+         size=30, colour=LOSS, bold=True, line=1.25)
+
+    y += band_h + 0.95
+
+    # ------------------------------------------------- column 1 : the problem
+    c1 = col_x[0]
+    y1 = heading(slide, c1, y, col_w, "Why this is hard",
+                 "Three districts, three\nways forest is lost", accent=LOSS)
+
+    mechanisms = [
+        ("Gazipur", "1,819 km²", "SPECTRAL", CAUTION,
+         "Abrupt, permanent conversion as Dhaka expands north. Cleared land "
+         "looks different from forest, and stays different. The easy case."),
+        ("Sylhet", "3,416 km²", "SPATIAL", RECOVER,
+         "Tea estates are as green and as dense as natural forest. What "
+         "separates them is pattern — planted rows, uniform canopy, "
+         "geometric edges — not colour."),
+        ("Bandarban", "4,592 km²", "TEMPORAL", LOSS,
+         "Jhum: clear, crop, abandon, regrow, repeat. The signal is in the "
+         "sequence, and no single pair of dates contains it."),
+    ]
+    for name, area, signal, colour, text in mechanisms:
+        h = 3.35
+        block(slide, c1, y1, col_w, h, SURFACE, RULE, 1.2)
+        block(slide, c1, y1, 0.14, h, colour)
+        tfm = textbox(slide, c1 + 0.55, y1 + 0.35, col_w - 1.0, h - 0.6)
+        para(tfm, f"{name}   {area}", size=30, font=SERIF, colour=INK,
+             bold=True, first=True, space_after=3)
+        para(tfm, signal, size=21, font=MONO, colour=colour, bold=True,
+             space_after=9)
+        para(tfm, text, size=24, colour=INK_SOFT, line=1.2)
+        y1 += h + 0.42
+
+    y1 += 0.35
+    y1 = picture(slide, FIG / "study_area.png", c1, y1, col_w) + 0.28
+    y1 = caption(slide, c1, y1, col_w,
+                 "The three districts at a common scale. 9,827 km² in total, "
+                 "about 10.9 million Landsat pixels at 30 m.") + 0.5
+
+    tf = textbox(slide, c1, y1, col_w, 3.2)
+    para(tf, "Most method comparisons hold the landscape constant and vary the "
+             "model. This one varies both, which is what makes the interaction "
+             "between a class's structure and a model's capability visible at all.",
+         size=25, colour=INK, line=1.25, first=True)
+
+    # ------------------------------------------------- column 2 : the finding
+    c2 = col_x[1]
+    y2 = heading(slide, c2, y, col_w, "The finding · RQ4",
+                 "Separating jhum from\ndeforestation", accent=LOSS)
+
+    y2 = picture(slide, FIG / "bandarban_jhum_map.png", c2, y2, col_w) + 0.3
+    y2 = caption(slide, c2, y2, col_w,
+                 "Bandarban, classified from the annual NBR trajectory, 1988–2024. "
+                 "Green is cyclical jhum; red is permanent conversion. Shown at "
+                 "100 m by majority class — areas are tabulated at the native 30 m.") + 0.55
+
+    y2 = table(slide, c2, y2, col_w, [
+        ["Class", "Area", "Share"],
+        ["Stable", "371,380 ha", "80.8%"],
+        ["Permanent conversion", "*14,457 ha", "*3.15%"],
+        ["Cyclical jhum", "56,235 ha", "12.24%"],
+        ["Undetermined", "17,431 ha", "3.79%"],
+    ], col_w=[2.1, 1.25, 0.85], size=25, row_h=0.72) + 0.42
+
+    tf = textbox(slide, c2, y2, col_w, 3.4)
+    para(tf, "Undetermined is disturbance too close to the end of the series to "
+             "judge recovery. It is reported separately rather than folded into "
+             "either class — a plot cleared in 2022 has not had time to regrow, "
+             "and calling it permanent would inflate the headline figure with "
+             "fallows that simply have not come back yet.",
+         size=25, colour=INK_SOFT, line=1.25, first=True)
+
+    # ------------------------------------------ column 3 : does the model matter
+    c3 = col_x[2]
+    y3 = heading(slide, c3, y, col_w, "Method comparison · RQ2, RQ3",
+                 "The right model depends\non the signal", accent=LOSS)
+
+    tf = textbox(slide, c3, y3, col_w, 2.6)
+    para(tf, "Random Forest, a U-Net and a stacked ensemble, scored on spatially "
+             "disjoint test blocks. No model wins everywhere, and the ordering "
+             "tracks training-set size exactly.",
+         size=25, colour=INK, line=1.25, first=True)
+    y3 += 2.35
+
+    y3 = table(slide, c3, y3, col_w, [
+        ["District", "RF", "U-Net", "Ens.", "Patches"],
+        ["Gazipur", "0.413", "0.316", "*0.444", "55"],
+        ["Sylhet", "0.503", "*0.590", "0.519", "167"],
+        ["Bandarban", "0.463", "0.461", "*0.475", "260"],
+    ], col_w=[1.5, 0.85, 0.9, 0.85, 1.0], size=24, row_h=0.68) + 0.3
+    y3 = caption(slide, c3, y3, col_w,
+                 "Patch-test macro F1, against Hansen-derived training labels.") + 0.65
+
+    tf = textbox(slide, c3, y3, col_w, 2.6)
+    para(tf, "Tea is a spatial pattern, not a spectral one. Switching only the "
+             "GLCM texture bands in and out — architecture and data held "
+             "constant — moves plantation F1 by 22%, and almost nothing else.",
+         size=25, colour=INK, line=1.25, first=True)
+    y3 += 2.35
+
+    y3 = table(slide, c3, y3, col_w, [
+        ["Sylhet, plantation F1", "Score"],
+        ["U-Net with texture", "*0.452"],
+        ["U-Net without texture", "0.370"],
+        ["Random Forest (per-pixel)", "0.029"],
+    ], col_w=[2.6, 1.0], size=24, row_h=0.68) + 0.3
+    y3 = caption(slide, c3, y3, col_w,
+                 "A per-pixel model has no access to planted rows or canopy "
+                 "uniformity — the properties that define a tea estate.") + 0.65
+
+    tf = textbox(slide, c3, y3, col_w, 2.2)
+    para(tf, "Areas use the Olofsson stratified estimator with 95% confidence "
+             "intervals, never raw pixel counts.",
+         size=25, colour=INK, line=1.25, first=True)
+    y3 += 1.5
+
+    y3 = table(slide, c3, y3, col_w, [
+        ["Adjusted loss, 1990–2024", "Estimate", "Sig."],
+        ["Gazipur", "443 ± 849 ha", "no"],
+        ["Sylhet", "5,547 ± 10,755 ha", "no"],
+        ["Bandarban", "*71,011 ± 41,629 ha", "*yes"],
+    ], col_w=[1.5, 1.9, 0.6], size=24, row_h=0.68) + 0.3
+    caption(slide, c3, y3, col_w,
+            "Only Bandarban's interval excludes zero. In the other two, the "
+            "reduced reference sample cannot resolve loss from no loss — "
+            "reported as a result, not hidden.")
+
+    # ---------------------------------------------------------------- footer
+    fy = H - 7.6
+    rule(slide, MARGIN, fy, W - 2 * MARGIN, INK, 3)
+    fy += 0.55
+
+    fcol = (W - 2 * MARGIN - 2 * GUTTER) / 3
+
+    tf = textbox(slide, MARGIN, fy, fcol, 5.6)
+    para(tf, "METHOD", size=21, font=MONO, colour=INK_FAINT, bold=True,
+         first=True, space_after=9)
+    para(tf, "Landsat Collection 2 Level-2 surface reflectance via Google Earth "
+             "Engine. Dry-season composites (1 Nov – 31 Mar), cloud and shadow "
+             "masked, median reduced into a 23-band stack. Train, validation and "
+             "test splits are whole disjoint 10 km blocks, never random pixels. "
+             "LandTrendr segments the annual NBR series to separate cyclical "
+             "disturbance from permanent conversion.",
+         size=23, colour=INK_SOFT, line=1.22)
+
+    tf = textbox(slide, MARGIN + fcol + GUTTER, fy, fcol, 5.6)
+    para(tf, "MEASURED, NOT ASSUMED", size=21, font=MONO, colour=INK_FAINT,
+         bold=True, first=True, space_after=9)
+    para(tf, "Published cross-sensor harmonisation coefficients, fitted over the "
+             "continental United States, performed worse here than applying no "
+             "correction at all. They would have degraded NIR by 8.5% and SWIR2 "
+             "by 69.8% — the two bands NBR is built from, and NBR is what the "
+             "Bandarban result depends on. Locally fitted coefficients were "
+             "adopted per band instead.",
+         size=23, colour=INK_SOFT, line=1.22)
+
+    lx = MARGIN + 2 * (fcol + GUTTER)
+    block(slide, lx, fy - 0.3, fcol, 5.9, CAUTION_SOFT)
+    block(slide, lx, fy - 0.3, fcol, 0.11, CAUTION)
+    tf = textbox(slide, lx + 0.5, fy + 0.15, fcol - 1.0, 5.2)
+    para(tf, "PROVISIONAL", size=21, font=MONO, colour=CAUTION, bold=True,
+         first=True, space_after=9)
+    para(tf, "Every figure here that rests on the reference sample is provisional. "
+             "Two trained interpreters working from the same written protocol "
+             "agreed at close to chance on where forest begins — Cohen's κ of "
+             "0.157 and 0.038 against a 0.75 threshold. Until that is reconciled "
+             "these numbers are indicative, not final.",
+         size=23, colour=INK_SOFT, line=1.22, space_after=9)
+    para(tf, "We report them anyway. An unreported κ is indistinguishable from "
+             "an unmeasured one.",
+         size=23, colour=INK, bold=True, line=1.22)
+
+    if factor != 1.0:
+        rescale(slide, factor)
+        prs.slide_width = Inches(SIZES[size_key][0])
+        prs.slide_height = Inches(SIZES[size_key][1])
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out = OUT_DIR / f"EcoVision_poster_{size_key.upper()}.pptx"
+    prs.save(out)
+    return out
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--size", choices=sorted(SIZES), default="a0")
+    args = parser.parse_args()
+    out = build(args.size)
+    W, H = SIZES[args.size]
+    print(f"wrote {out.relative_to(REPO)}")
+    print(f"  {args.size.upper()} portrait, {W:.2f} x {H:.2f} in "
+          f"({W * 25.4:.0f} x {H * 25.4:.0f} mm)")
+    print("  Print at 100%. Do not let the shop 'fit to page' -- that rescales "
+          "the type and the 26 pt body text stops being 26 pt.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
