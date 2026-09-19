@@ -77,13 +77,20 @@ CAUTION_SOFT = RGBColor(0xFB, 0xF3, 0xDE)
 MARGIN = 1.3
 GUTTER = 0.85
 
-# Scan target. Set to "" and the QR block is omitted rather than printed
-# pointing nowhere -- a dead QR on a poster is worse than none, because
-# people try it.
-QR_URL = "https://ecovision-503602.projects.earthengine.app/view/ecovision"
-QR_LABEL = "Explore the maps"
-QR_CAPTION = ("Every epoch as a layer, and the annual trajectory at any pixel "
-              "you click. Runs live on Earth Engine.")
+# Scan targets, as (url, label, caption). Empty list and the block is
+# omitted rather than printed pointing nowhere -- a dead QR on a poster is
+# worse than none, because people try it.
+#
+# One code. The Earth Engine app was the target until 2026-09-19 and is
+# now reached from the site instead -- two codes on a poster make the
+# visitor choose before they know what either is, and the site is the
+# better first stop because it carries the findings themselves.
+QR_TARGETS = [
+    ("https://sheikhsulaiman.github.io/ecovision/",
+     "Read the findings",
+     "The numbers on this poster, with the figures, the district map, and "
+     "a link through to the live Earth Engine app."),
+]
 
 # 2.75 in at A0. Rough rule for QR codes: readable scan distance is about
 # ten times the code's width, so this reads from arm's length, which is
@@ -110,23 +117,69 @@ def qr_png(url: str, path: Path) -> Path:
     return path
 
 
-def qr_block(slide, x, y, w, *, size=QR_SIZE):
-    """QR plus its label. Returns the bottom edge, or `y` if no URL is set."""
-    if not QR_URL:
-        return y
-    png = OUT_DIR / "_qr_earthengine.png"
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+def _qr_slug(url: str) -> str:
+    """Stable filename for a target's cached PNG."""
+    keep = "".join(c if c.isalnum() else "_" for c in url.split("//", 1)[-1])
+    return f"_qr_{keep[:60]}.png"
+
+
+def _qr_beside(slide, x, y, w, size, url, label, caption):
+    """One code with its text alongside. The footer column is wide and
+    short, so a single code reads better beside its label than above it."""
+    png = OUT_DIR / _qr_slug(url)
     if not png.exists():
-        qr_png(QR_URL, png)
+        qr_png(url, png)
     slide.shapes.add_picture(str(png), Inches(x), Inches(y),
                              width=Inches(size), height=Inches(size))
     tf = textbox(slide, x + size + 0.45, y + 0.12, w - size - 0.45, size)
-    para(tf, QR_LABEL, size=26, font=SERIF, colour=INK, bold=True, first=True,
+    para(tf, label, size=26, font=SERIF, colour=INK, bold=True, first=True,
          space_after=6)
-    para(tf, QR_CAPTION, size=21, colour=INK_SOFT, line=1.2, space_after=6)
-    para(tf, QR_URL.replace("https://", ""), size=17, font=MONO,
+    para(tf, caption, size=21, colour=INK_SOFT, line=1.2, space_after=6)
+    para(tf, url.replace("https://", ""), size=17, font=MONO,
          colour=INK_FAINT, line=1.2)
     return y + size
+
+
+def qr_block(slide, x, y, w, *, size=QR_SIZE, targets=None):
+    """The scan targets, code above label. Returns the bottom edge.
+
+    Laid out as columns rather than rows: the footer column is wide and
+    short, so two stacked code-plus-paragraph rows would run off the
+    bottom of the sheet, and the caption under a code is easier to tie to
+    it than a caption beside it.
+    """
+    targets = QR_TARGETS if targets is None else targets
+    if not targets:
+        return y
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    if len(targets) == 1:
+        return _qr_beside(slide, x, y, w, size, *targets[0])
+
+    gutter = 0.6
+    col = (w - gutter * (len(targets) - 1)) / len(targets)
+    bottom = y
+    for i, (url, label, caption) in enumerate(targets):
+        cx = x + i * (col + gutter)
+        png = OUT_DIR / _qr_slug(url)
+        if not png.exists():
+            qr_png(url, png)
+        slide.shapes.add_picture(str(png), Inches(cx), Inches(y),
+                                 width=Inches(size), height=Inches(size))
+
+        ty = y + size + 0.22
+        lh = text_height(label, col, 26, font=SERIF, bold=True, line=1.15)
+        ch = text_height(caption, col, 21, line=1.2)
+        uh = text_height(url.replace("https://", ""), col, 17, font=MONO,
+                         line=1.2)
+        tf = textbox(slide, cx, ty, col, lh + ch + uh + 0.3)
+        para(tf, label, size=26, font=SERIF, colour=INK, bold=True,
+             first=True, space_after=6, line=1.15)
+        para(tf, caption, size=21, colour=INK_SOFT, line=1.2, space_after=6)
+        para(tf, url.replace("https://", ""), size=17, font=MONO,
+             colour=INK_FAINT, line=1.2)
+        bottom = max(bottom, ty + lh + ch + uh + 0.3)
+    return bottom
 
 
 # --------------------------------------------------------------- measuring
