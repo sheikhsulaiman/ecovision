@@ -1,0 +1,70 @@
+# Publishes ecovision-dashboard/ to GitHub Pages at
+# https://sheikhsulaiman.github.io/ecovision/
+#
+# The dashboard is a subdirectory of a repo that is mostly Python and
+# thesis text, so this runs only when the dashboard (or this file) changes
+# — a commit to src/ or docs/ should not redeploy a site it cannot affect.
+#
+# vite.config.ts sets base: "./", which is what makes the built site work
+# from /ecovision/ rather than from a domain root. Do not change it to an
+# absolute base without changing this deployment too.
+
+name: Deploy dashboard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ecovision-dashboard/**"
+      - ".github/workflows/deploy-dashboard.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one already running — a
+# cancelled deploy can leave the site on a half-published version.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ecovision-dashboard
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ecovision-dashboard/package-lock.json
+
+      # ci, not install: the lockfile is committed and the build that gets
+      # published should be the one the lockfile describes.
+      - run: npm ci
+
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      # Paths in `with:` are relative to the workspace, not to the job's
+      # working-directory, so this one carries the subdirectory.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ecovision-dashboard/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

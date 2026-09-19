@@ -2,3 +2,7 @@ node_modules/
 dist/
 *.local
 .DS_Store
+
+# tsc -b incremental state. Derived, and a stale copy on a fresh CI
+# checkout is exactly the kind of thing that skips a type check.
+tsconfig.tsbuildinfo
