@@ -558,7 +558,7 @@ def build_focus(size_key: str) -> Path:
               "regrow, and calling it permanent would inflate the headline.",
               size=25, colour=INK_SOFT) + 0.2
 
-    y2 = picture(slide, FIG / "bandarban_disturbance_by_year.png",
+    y2 = picture(slide, FIG / "bandarban_disturbance_by_year_poster.png",
                  c2, y2, col_w) + 0.2
     caption(slide, c2, y2, col_w,
             "Disturbance per year. The final column is the tallest and the "
@@ -581,7 +581,7 @@ def build_focus(size_key: str) -> Path:
         ["Bandarban", "0.463", "0.461", "*0.475", "260"],
     ], col_w=[1.5, 0.85, 0.9, 0.85, 1.0], size=24, row_h=0.68) + 0.3
     y3 = caption(slide, c3, y3, col_w,
-                 "Patch-test macro F1, against Hansen-derived training labels.") + 0.65
+                 "Patch-test macro F1, against Hansen-derived training labels.") + 0.42
 
     y3 = body(slide, c3, y3, col_w,
               "Tea is a spatial pattern, not a spectral one. Switching only "
@@ -597,7 +597,7 @@ def build_focus(size_key: str) -> Path:
     ], col_w=[2.6, 1.0], size=24, row_h=0.68) + 0.3
     y3 = caption(slide, c3, y3, col_w,
                  "A per-pixel model has no access to planted rows or canopy "
-                 "uniformity — the properties that define a tea estate.") + 0.65
+                 "uniformity — the properties that define a tea estate.") + 0.42
 
     y3 = body(slide, c3, y3, col_w,
               "Areas use the Olofsson stratified estimator with 95% confidence "
@@ -609,10 +609,29 @@ def build_focus(size_key: str) -> Path:
         ["Sylhet", "5,547 ± 10,755 ha", "no"],
         ["Bandarban", "*71,011 ± 41,629 ha", "*yes"],
     ], col_w=[1.5, 1.9, 0.6], size=24, row_h=0.68) + 0.3
+    y3 = caption(slide, c3, y3, col_w,
+                 "Only Bandarban's interval excludes zero. In the other two, "
+                 "the reduced reference sample cannot resolve loss from no "
+                 "loss — reported as a result, not hidden.") + 0.5
+
+    # The evidence under the whole poster, put last because it is the thing
+    # a sceptical reader asks for after the totals: show me the record.
+    # Column 3 rather than column 2 only because column 2 has no room left;
+    # its own rule and eyebrow mark it as belonging to the RQ4 claim.
+    rule(slide, c3, y3, col_w, INK, 2)
+    y3 += 0.3
+    tf = textbox(slide, c3, y3, col_w, 0.8)
+    para(tf, "THE RECORD ITSELF · RQ4", size=22, font=MONO, colour=LOSS,
+         first=True)
+    y3 += 0.72
+    y3 = body(slide, c3, y3, col_w,
+              "Three real pixels, every dry season 1988–2024. The raw "
+              "record, not the fitted line.", size=25) + 0.15
+    y3 = picture(slide, FIG / "trajectories_poster.png", c3, y3, col_w) + 0.22
     caption(slide, c3, y3, col_w,
-            "Only Bandarban's interval excludes zero. In the other two, the "
-            "reduced reference sample cannot resolve loss from no loss — "
-            "reported as a result, not hidden.")
+            "A two-date comparison samples two of these 37 points. Whether it "
+            "calls the first panel deforestation depends entirely on which "
+            "two it lands on.")
 
     # ---------------------------------------------------------------- footer
     fy = H - 7.6
@@ -952,7 +971,7 @@ def build_overview(size_key: str) -> Path:
             "deforestation that occurred — only the annual trajectory shows "
             "whether the canopy came back.")
     ts_w = inner_w
-    ts_h = ts_w * image_ratio(FIG / "bandarban_disturbance_by_year.png")
+    ts_h = ts_w * image_ratio(FIG / "bandarban_disturbance_by_year_poster.png")
     ts_cap = ("When it happened. Green is cyclical jhum, red permanent "
               "conversion; grey is disturbance too close to the series end "
               "to judge, which is why the final year is the tallest column "
@@ -977,7 +996,7 @@ def build_overview(size_key: str) -> Path:
     para(tfr2, tail, size=23, colour=INK_SOFT, line=1.22, first=True)
 
     iy += tail_h + 0.45
-    iy = picture(slide, FIG / "bandarban_disturbance_by_year.png",
+    iy = picture(slide, FIG / "bandarban_disturbance_by_year_poster.png",
                  cx[2] + pad, iy, ts_w) + 0.2
     tfr3 = textbox(slide, cx[2] + pad, iy, inner_w, ts_cap_h)
     para(tfr3, ts_cap, size=21, colour=INK_FAINT, line=1.22, first=True)

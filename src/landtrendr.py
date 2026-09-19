@@ -265,6 +265,31 @@ def areas(image: ee.Image, aoi: ee.Geometry, scale: int) -> dict:
             for c, a in sorted(by_code.items())}
 
 
+def write_by_year(image: ee.Image, aoi: ee.Geometry, district: str,
+                  scale: int) -> Path:
+    """Write the per-year table `src/figures.py` reads.
+
+    One row per year of the series, one column per class, zero-filled: a
+    year with no disturbance is a real zero and has to plot as one, not as
+    a gap. Columns stay in class order rather than the order Earth Engine
+    happens to return them in.
+    """
+    import csv
+
+    series = disturbance_by_year(image, aoi, scale)
+    columns = [CLASSES[c] for c in (1, 2, 3)]
+    out = REPO / "outputs" / "tables" / f"landtrendr_{district}_by_year.csv"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["year"] + [f"{c}_ha" for c in columns])
+        for year in range(pp.START_YEAR, pp.END_YEAR + 1):
+            writer.writerow([year] + [
+                round(series.get(c, {}).get(year, 0.0), 3) for c in columns])
+    print(f"wrote {out.relative_to(REPO)}")
+    return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--district", default="bandarban", choices=pp.DISTRICTS)
@@ -276,6 +301,8 @@ def main() -> int:
                         help="materialise the classified map as a GEE asset (do this first)")
     parser.add_argument("--from-asset", action="store_true",
                         help="tabulate from the materialised asset — cheap, and the only way at 30 m")
+    parser.add_argument("--by-year", action="store_true",
+                        help="also write disturbed area per year per class to outputs/tables/")
     args = parser.parse_args()
 
     try:
@@ -305,6 +332,9 @@ def main() -> int:
     if args.to_asset:
         export_asset(classified, aoi, args.district)
         return 0
+
+    if args.by_year:
+        write_by_year(classified, aoi, args.district, args.scale)
 
     if args.export:
         task = ee.batch.Export.image.toDrive(

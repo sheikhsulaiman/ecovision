@@ -47,21 +47,65 @@ import landtrendr as lt  # noqa: E402
 
 DEFAULT_OUT = REPO / "ecovision-dashboard" / "src" / "data" / "trajectories.json"
 
-# How the site labels each class, and what a reader should look for.
+# What each class means. These describe the CLASS, not any particular
+# pixel, and must not make claims about a series they were not checked
+# against -- an earlier version of this table said "one drop, and the
+# canopy never comes back" for every permanent point, and shipped that
+# sentence under a chart whose pixel had climbed back to 61% of its
+# pre-disturbance NBR. The per-point measured clause is added by
+# `measured_reading` below, which reads the actual series.
 READING = {
     "cyclical": "Cleared and regrown more than once. Each dip is a cropping "
                 "cycle and each recovery is fallow regrowth — this is not "
                 "deforestation, and a two-date comparison cannot tell.",
-    "permanent": "One drop, and the canopy never comes back. This is what "
-                 "deforestation actually looks like in the record.",
-    "stable": "High and flat for the whole series. Undisturbed canopy, and "
+    "permanent": "Disturbed, and not recovered to 70% of its previous level "
+                 "within six years — the threshold this study uses to "
+                 "separate conversion from fallow.",
+    "stable": "No sustained drop across the series. Undisturbed canopy, and "
               "the baseline everything else is read against.",
     "plantation": "High but flatter than natural forest, with shallow regular "
                   "dips from pruning cycles rather than clearing.",
-    "loss_gazipur": "An abrupt, permanent conversion on the edge of Dhaka's "
-                    "industrial belt — the simple case the other districts "
-                    "are contrasted against.",
+    "loss_gazipur": "A disturbance on the edge of Dhaka's industrial belt — "
+                    "the simple landscape the other districts are contrasted "
+                    "against.",
 }
+
+
+def measured_reading(kind: str, nbr: list, start_year: int) -> str:
+    """Class explanation, plus what this pixel's own series actually does.
+
+    The measured clause exists because the class sentence cannot be trusted
+    to describe any individual pixel: classification runs on a fitted
+    trajectory and a six-year window, so a pixel can be permanent by the
+    rule and still be visibly recovering by the end of the chart. Saying
+    both is honest; saying only the first is not.
+    """
+    values = [v for v in nbr if v is not None]
+    if len(values) < 8:
+        return READING.get(kind, "")
+
+    series = [float("nan") if v is None else float(v) for v in nbr]
+    pre = max(v for v in series[:8] if v == v)
+    trough = min(v for v in series if v == v)
+    trough_year = start_year + series.index(trough)
+    tail = [v for v in series[-5:] if v == v]
+    recovered = (sum(tail) / len(tail) - trough) / (pre - trough) \
+        if pre > trough else float("nan")
+
+    if kind == "stable":
+        clause = (f"NBR stays between {trough:.2f} and "
+                  f"{max(v for v in series if v == v):.2f} for the whole "
+                  f"series.")
+    elif recovered != recovered:
+        clause = ""
+    elif recovered >= 0.9:
+        clause = (f"Lowest in {trough_year}, and back to {recovered:.0%} of "
+                  f"its pre-disturbance level by 2024.")
+    else:
+        clause = (f"Lowest in {trough_year}; {2024 - trough_year} years on it "
+                  f"has recovered {recovered:.0%} of its pre-disturbance "
+                  f"level.")
+    return f"{READING.get(kind, '')} {clause}".strip()
 
 CLASS_CODE = {"stable": 0, "permanent": 1, "cyclical": 2}
 
@@ -246,7 +290,25 @@ def sample_series(points: list[dict]) -> dict[str, dict]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--relabel", action="store_true",
+                        help="rewrite readings in an existing file from its "
+                             "own stored series; no Earth Engine call")
     args = parser.parse_args()
+
+    # The series are already in the file, so correcting what is said about
+    # them does not need 37 more composites built.
+    if args.relabel:
+        payload = json.loads(args.out.read_text(encoding="utf-8"))
+        payload["reading"] = READING
+        for point in payload["points"]:
+            before = point.get("reading", "")
+            point["reading"] = measured_reading(
+                point["kind"], point["nbr"], payload["startYear"])
+            if point["reading"] != before:
+                print(f"  {point['id']:28s} relabelled")
+        args.out.write_text(json.dumps(payload, indent=1), encoding="utf-8")
+        print(f"\nrewrote {args.out.relative_to(REPO)}")
+        return 0
 
     ee.Initialize(project=pp.PROJECT)
 
@@ -269,7 +331,9 @@ def main() -> int:
                  "Nulls are years with no usable observation at that pixel."),
         "reading": READING,
         "points": [
-            {**p, **series[p["id"]], "reading": READING[p["kind"]]}
+            {**p, **series[p["id"]],
+             "reading": measured_reading(p["kind"], series[p["id"]]["nbr"],
+                                         pp.START_YEAR)}
             for p in points
         ],
     }

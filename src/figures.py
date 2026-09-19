@@ -447,7 +447,7 @@ def fig_bandarban_disturbance() -> None:
     _save(fig, "bandarban_disturbance.png")
 
 
-def fig_bandarban_by_year() -> None:
+def fig_bandarban_by_year(scale: float = 1.0) -> None:
     """Disturbed area per year, split by class — the RQ4 result as a series.
 
     The class totals say how much; this says when, and it is the only view
@@ -484,19 +484,115 @@ def fig_bandarban_by_year() -> None:
     # Placed at the top it ran straight through the final-year column, which
     # is the tallest on the chart.
     ax.text(first_undetermined + 0.1, ax.get_ylim()[1] * 0.52,
-            "recovery not\nyet judgeable", fontsize=8.5, color="#666666",
-            va="top", linespacing=1.25)
+            "recovery not\nyet judgeable", fontsize=8.5 * scale,
+            color="#666666", va="top", linespacing=1.25)
 
-    ax.set_ylabel("disturbed area (ha)", fontsize=9.5)
+    ax.set_ylabel("disturbed area (ha)", fontsize=9.5 * scale)
     ax.set_xlim(pp.START_YEAR - 0.8, pp.END_YEAR + 0.8)
-    ax.tick_params(labelsize=9)
+    ax.tick_params(labelsize=9 * scale)
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color="#e4eaef", linewidth=0.8)
     ax.set_axisbelow(True)
-    ax.legend(frameon=False, fontsize=9, loc="upper left", ncol=1)
+    ax.legend(frameon=False, fontsize=9 * scale, loc="upper left", ncol=1)
 
     fig.tight_layout()
-    _save(fig, "bandarban_disturbance_by_year.png")
+    _save(fig, "bandarban_disturbance_by_year"
+          f"{'_poster' if scale != 1.0 else ''}.png")
+
+
+def fig_trajectories(scale: float = 1.0) -> None:
+    """Three real pixels, 1988-2024 — the evidence rule 9 rests on.
+
+    Every other figure reports rule 9 as a total: so much cyclical, so
+    much permanent. This is the one that shows why the distinction is
+    real rather than asserted, and it needs no numbers read off it. A
+    cyclical pixel saws up and down; a permanently converted one drops
+    once and stays down; a stable one never moves. A bitemporal
+    comparison samples two of these 37 points and cannot, even in
+    principle, tell the first two apart.
+
+    The series are real observations, not the LandTrendr fit — a fitted
+    line would beg the question by showing the segmentation's own answer
+    instead of the record it was derived from. Gaps are years with no
+    usable observation at that pixel, left as gaps rather than
+    interpolated.
+    """
+    path = REPO / "ecovision-dashboard" / "src" / "data" / "trajectories.json"
+    if _missing(path, "src/export_trajectories.py"):
+        return
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    points = {p["id"]: p for p in payload["points"]}
+
+    # One pixel per behaviour, all three in Bandarban so the contrast is
+    # landscape-controlled: same district, same composites, same year range.
+    #
+    # The permanent example is `permanent-2`, not the higher-magnitude
+    # `permanent-6`. Both are classed permanent and both classifications are
+    # defensible, but -6 climbs back to 61% of its pre-disturbance NBR by the
+    # end of the series: it qualifies as permanent only because it failed to
+    # recover 70% *within six years*, which is a true statement about the
+    # rule and a misleading picture on a poster. -2 dropped in 1998 and is
+    # still under half its old level a quarter-century later, which is what
+    # the class is meant to describe.
+    # Two straplines each: the full one for the thesis, and a short one for
+    # the poster, where the type is 1.5x larger and the panel is no wider.
+    # The long line is not shrunk to fit — at poster distance a line nobody
+    # can read is the same as no line, and the poster's own caption under
+    # the figure carries the argument at 21 pt.
+    panels = [
+        ("bandarban-cyclical-3", "Cyclical jhum", "#2f6f4f",
+         "three clearings since 1988, each one regrown",
+         "regrown every time"),
+        ("bandarban-permanent-2", "Permanent conversion", "#d1495b",
+         "cleared 1998; 26 years on, still under half recovered",
+         "cleared 1998, never back"),
+        ("bandarban-stable-1", "Stable forest", "#6b7a88",
+         "no sustained drop in 37 years — the baseline",
+         "no sustained drop"),
+    ]
+    missing = [pid for pid, *_ in panels if pid not in points]
+    if missing:
+        print(f"  skipped trajectories.png — no such point(s): {missing}")
+        return
+
+    years = np.arange(payload["startYear"], payload["endYear"] + 1)
+    # `scale` multiplies type, not the canvas. Shrinking the canvas to make
+    # type print larger was tried first and ran the three panel titles into
+    # one another — there is only so much width for "Permanent conversion".
+    fig, axes = plt.subplots(1, 3, figsize=(9.4, 2.9), sharey=True)
+
+    for ax, (pid, title, colour, strap, short) in zip(axes, panels):
+        strap = short if scale > 1.3 else strap
+        point = points[pid]
+        nbr = np.array([np.nan if v is None else v for v in point["nbr"]],
+                       dtype=float)
+        ax.plot(years, nbr, color=colour, linewidth=1.5, solid_capstyle="round")
+        ax.fill_between(years, -0.1, nbr, color=colour, alpha=0.10)
+
+        # Title and strapline both live above the axes, stacked. Setting the
+        # strap at 1.015 put it inside the plot area and over the gridlines.
+        ax.set_title(title, fontsize=10 * scale, color="#11161c",
+                     pad=22 * scale, loc="left")
+        ax.text(0.0, 1.035, strap, transform=ax.transAxes, fontsize=8 * scale,
+                color="#75838d", va="bottom")
+        ax.set_xlim(years[0] - 0.5, years[-1] + 0.5)
+        ax.set_ylim(-0.1, 1.0)
+        # Two ticks at poster type size; four only when the labels are small
+        # enough not to touch.
+        ax.set_xticks([1990, 2010] if scale > 1.3 else [1990, 2000, 2010, 2020])
+        ax.tick_params(labelsize=8.5 * scale)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.grid(axis="y", color="#e4eaef", linewidth=0.7)
+        ax.set_axisbelow(True)
+        # Coordinates, so the claim is checkable rather than illustrative.
+        ax.text(0.985, 0.045, f"{point['lat']:.3f}, {point['lon']:.3f}",
+                transform=ax.transAxes, fontsize=7 * scale,
+                color="#9aa6b0",
+                ha="right")
+
+    axes[0].set_ylabel("NBR", fontsize=9.5 * scale)
+    fig.tight_layout()
+    _save(fig, f"trajectories{'_poster' if scale != 1.0 else ''}.png")
 
 
 def fig_bandarban_jhum_map() -> None:
@@ -687,7 +783,14 @@ FIGURES_AVAILABLE = {
     "adjusted-loss": fig_adjusted_loss,
     "bandarban-jhum-map": fig_bandarban_jhum_map,
     "bandarban-by-year": fig_bandarban_by_year,
+    "trajectories": fig_trajectories,
     "pipeline-overview": fig_pipeline_overview,
+    # Poster variants. Same data, same canvas, 1.5x type -- these two land
+    # on the poster at roughly 1:1, so thesis-sized labels would print at
+    # 9 pt beside 25 pt body text and be unreadable at poster distance.
+    # Written as separate files so the thesis figures never change.
+    "bandarban-by-year-poster": lambda: fig_bandarban_by_year(scale=1.5),
+    "trajectories-poster": lambda: fig_trajectories(scale=1.5),
 }
 
 

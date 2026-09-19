@@ -5,10 +5,10 @@
  "note": "Annual dry-season composites, same pipeline as the thesis (src/preprocess.py build_composite). Sampled at 30 m. Nulls are years with no usable observation at that pixel.",
  "reading": {
   "cyclical": "Cleared and regrown more than once. Each dip is a cropping cycle and each recovery is fallow regrowth \u2014 this is not deforestation, and a two-date comparison cannot tell.",
-  "permanent": "One drop, and the canopy never comes back. This is what deforestation actually looks like in the record.",
-  "stable": "High and flat for the whole series. Undisturbed canopy, and the baseline everything else is read against.",
+  "permanent": "Disturbed, and not recovered to 70% of its previous level within six years \u2014 the threshold this study uses to separate conversion from fallow.",
+  "stable": "No sustained drop across the series. Undisturbed canopy, and the baseline everything else is read against.",
   "plantation": "High but flatter than natural forest, with shallow regular dips from pruning cycles rather than clearing.",
-  "loss_gazipur": "An abrupt, permanent conversion on the edge of Dhaka's industrial belt \u2014 the simple case the other districts are contrasted against."
+  "loss_gazipur": "A disturbance on the edge of Dhaka's industrial belt \u2014 the simple landscape the other districts are contrasted against."
  },
  "points": [
   {
@@ -95,7 +95,7 @@
     0.6592,
     0.6319
    ],
-   "reading": "Cleared and regrown more than once. Each dip is a cropping cycle and each recovery is fallow regrowth \u2014 this is not deforestation, and a two-date comparison cannot tell."
+   "reading": "Cleared and regrown more than once. Each dip is a cropping cycle and each recovery is fallow regrowth \u2014 this is not deforestation, and a two-date comparison cannot tell. Lowest in 2002, and back to 98% of its pre-disturbance level by 2024."
   },
   {
    "id": "bandarban-cyclical-5",
@@ -181,7 +181,7 @@
     0.496,
     0.5375
    ],
-   "reading": "Cleared and regrown more than once. Each dip is a cropping cycle and each recovery is fallow regrowth \u2014 this is not deforestation, and a two-date comparison cannot tell."
+   "reading": "Cleared and regrown more than once. Each dip is a cropping cycle and each recovery is fallow regrowth \u2014 this is not deforestation, and a two-date comparison cannot tell. Lowest in 2013; 11 years on it has recovered 75% of its pre-disturbance level."
   },
   {
    "id": "bandarban-permanent-6",
@@ -267,7 +267,7 @@
     0.5626,
     0.5498
    ],
-   "reading": "One drop, and the canopy never comes back. This is what deforestation actually looks like in the record."
+   "reading": "Disturbed, and not recovered to 70% of its previous level within six years \u2014 the threshold this study uses to separate conversion from fallow. Lowest in 2013; 11 years on it has recovered 61% of its pre-disturbance level."
   },
   {
    "id": "bandarban-permanent-2",
@@ -353,7 +353,7 @@
     0.3639,
     0.4229
    ],
-   "reading": "One drop, and the canopy never comes back. This is what deforestation actually looks like in the record."
+   "reading": "Disturbed, and not recovered to 70% of its previous level within six years \u2014 the threshold this study uses to separate conversion from fallow. Lowest in 1998; 26 years on it has recovered 45% of its pre-disturbance level."
   },
   {
    "id": "bandarban-stable-1",
@@ -439,7 +439,7 @@
     0.7614,
     0.749
    ],
-   "reading": "High and flat for the whole series. Undisturbed canopy, and the baseline everything else is read against."
+   "reading": "No sustained drop across the series. Undisturbed canopy, and the baseline everything else is read against. NBR stays between 0.64 and 0.91 for the whole series."
   },
   {
    "id": "bandarban-stable-7",
@@ -525,7 +525,7 @@
     0.5956,
     0.6542
    ],
-   "reading": "High and flat for the whole series. Undisturbed canopy, and the baseline everything else is read against."
+   "reading": "No sustained drop across the series. Undisturbed canopy, and the baseline everything else is read against. NBR stays between 0.42 and 0.69 for the whole series."
   },
   {
    "id": "sylhet-plantation-1",
@@ -611,7 +611,7 @@
     0.4847,
     0.5066
    ],
-   "reading": "High but flatter than natural forest, with shallow regular dips from pruning cycles rather than clearing."
+   "reading": "High but flatter than natural forest, with shallow regular dips from pruning cycles rather than clearing. Lowest in 1996; 28 years on it has recovered 27% of its pre-disturbance level."
   },
   {
    "id": "gazipur-loss-1",
@@ -697,7 +697,7 @@
     0.3411,
     0.4186
    ],
-   "reading": "An abrupt, permanent conversion on the edge of Dhaka's industrial belt \u2014 the simple case the other districts are contrasted against."
+   "reading": "A disturbance on the edge of Dhaka's industrial belt \u2014 the simple landscape the other districts are contrasted against. Lowest in 2009, and back to 103% of its pre-disturbance level by 2024."
   }
  ]
 }
