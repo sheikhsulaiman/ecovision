@@ -500,6 +500,68 @@ def fig_bandarban_by_year(scale: float = 1.0) -> None:
           f"{'_poster' if scale != 1.0 else ''}.png")
 
 
+def fig_by_year_all(scale: float = 1.0) -> None:
+    """Annual disturbance in every district that has been segmented.
+
+    One panel per district, each on its own y-axis. A shared axis would be
+    honest about magnitude and useless about shape — Bandarban's totals are
+    large enough that Gazipur and Sylhet would be flat lines against it —
+    so the axes differ and each panel's total is printed on it, which is
+    the number a reader would otherwise try to estimate from the bar
+    heights.
+
+    Districts with no table are omitted rather than drawn empty. Only
+    Bandarban's cyclical class is jhum; elsewhere the class means no more
+    than what it measures, which is disturbance that recovered inside the
+    series, so the legend says that and the reading is left open.
+    """
+    path = TABLES / "landtrendr_by_year_all.csv"
+    if _missing(path, "src/landtrendr.py --combine"):
+        return
+    table = pd.read_csv(path)
+
+    districts = [d for d in pp.DISTRICTS
+                 if f"{d}_permanent_conversion_ha" in table.columns]
+    if not districts:
+        print("  SKIPPED — no district columns in the combined table")
+        return
+
+    series = [
+        ("cyclical_disturbance_ha", "disturbed, then recovered", "#2f6f4f"),
+        ("permanent_conversion_ha", "permanent conversion", "#d1495b"),
+        ("undetermined_ha", "too recent to judge", "#c3c9d1"),
+    ]
+    fig, axes = plt.subplots(len(districts), 1,
+                             figsize=(9.4, 1.75 * len(districts) + 0.6),
+                             sharex=True)
+    axes = np.atleast_1d(axes)
+
+    for ax, district in zip(axes, districts):
+        bottom = np.zeros(len(table))
+        total = 0.0
+        for column, label, colour in series:
+            values = table[f"{district}_{column}"].to_numpy()
+            ax.bar(table["year"], values, bottom=bottom, width=0.78,
+                   label=label, color=colour, edgecolor="white", linewidth=0.3)
+            bottom += values
+            total += values.sum()
+        ax.set_title(f"{district.capitalize()}  ·  {total:,.0f} ha disturbed "
+                     f"since {pp.START_YEAR}",
+                     fontsize=10 * scale, loc="left", pad=6)
+        ax.set_xlim(pp.START_YEAR - 0.8, pp.END_YEAR + 0.8)
+        ax.tick_params(labelsize=8.5 * scale)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.grid(axis="y", color="#e4eaef", linewidth=0.7)
+        ax.set_axisbelow(True)
+
+    axes[len(axes) // 2].set_ylabel("disturbed area (ha)",
+                                    fontsize=9.5 * scale)
+    axes[0].legend(frameon=False, fontsize=8.5 * scale, loc="upper left",
+                   ncol=3)
+    fig.tight_layout()
+    _save(fig, f"disturbance_by_year_all{'_poster' if scale != 1.0 else ''}.png")
+
+
 def fig_trajectories(scale: float = 1.0) -> None:
     """Three real pixels, 1988-2024 — the evidence rule 9 rests on.
 
@@ -784,6 +846,7 @@ FIGURES_AVAILABLE = {
     "bandarban-jhum-map": fig_bandarban_jhum_map,
     "bandarban-by-year": fig_bandarban_by_year,
     "trajectories": fig_trajectories,
+    "by-year-all": fig_by_year_all,
     "pipeline-overview": fig_pipeline_overview,
     # Poster variants. Same data, same canvas, 1.5x type -- these two land
     # on the poster at roughly 1:1, so thesis-sized labels would print at
@@ -791,6 +854,7 @@ FIGURES_AVAILABLE = {
     # Written as separate files so the thesis figures never change.
     "bandarban-by-year-poster": lambda: fig_bandarban_by_year(scale=1.5),
     "trajectories-poster": lambda: fig_trajectories(scale=1.5),
+    "by-year-all-poster": lambda: fig_by_year_all(scale=1.5),
 }
 
 

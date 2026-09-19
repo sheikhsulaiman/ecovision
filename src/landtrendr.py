@@ -290,6 +290,53 @@ def write_by_year(image: ee.Image, aoi: ee.Geometry, district: str,
     return out
 
 
+def combine_by_year() -> Path | None:
+    """Merge whatever per-district by-year tables exist into one wide table.
+
+    Written from the per-district files rather than recomputed, so the
+    combined table cannot disagree with them. Districts with no table are
+    left out entirely rather than written as zeros: a district that was
+    never run and a district with no disturbance are different statements,
+    and a column of zeros reads as the second.
+    """
+    import csv
+
+    tables = REPO / "outputs" / "tables"
+    present = [d for d in pp.DISTRICTS
+               if (tables / f"landtrendr_{d}_by_year.csv").exists()]
+    if not present:
+        print("no per-district by-year tables yet")
+        return None
+
+    data: dict[str, dict[int, dict[str, float]]] = {}
+    for district in present:
+        rows = {}
+        with (tables / f"landtrendr_{district}_by_year.csv").open(
+                encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                rows[int(row["year"])] = {k: float(v)
+                                          for k, v in row.items() if k != "year"}
+        data[district] = rows
+
+    columns = [f"{CLASSES[c]}_ha" for c in (1, 2, 3)]
+    out = tables / "landtrendr_by_year_all.csv"
+    with out.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["year"] + [f"{d}_{c}" for d in present
+                                    for c in columns])
+        for year in range(pp.START_YEAR, pp.END_YEAR + 1):
+            line: list = [year]
+            for district in present:
+                row = data[district].get(year, {})
+                line += [round(row.get(c, 0.0), 3) for c in columns]
+            writer.writerow(line)
+    print(f"wrote {out.relative_to(REPO)}  ({', '.join(present)})")
+    missing = [d for d in pp.DISTRICTS if d not in present]
+    if missing:
+        print(f"  not included, never run: {', '.join(missing)}")
+    return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--district", default="bandarban", choices=pp.DISTRICTS)
@@ -303,7 +350,13 @@ def main() -> int:
                         help="tabulate from the materialised asset — cheap, and the only way at 30 m")
     parser.add_argument("--by-year", action="store_true",
                         help="also write disturbed area per year per class to outputs/tables/")
+    parser.add_argument("--combine", action="store_true",
+                        help="merge the per-district by-year tables into one; no Earth Engine call")
     args = parser.parse_args()
+
+    if args.combine:
+        combine_by_year()
+        return 0
 
     try:
         ee.Initialize(project=pp.PROJECT)
@@ -373,7 +426,15 @@ def main() -> int:
     if disturbed:
         print(f"  {permanent / disturbed:.1%} permanent conversion  "
               f"({permanent:,.0f} ha)  <- the only part that is deforestation")
-        print(f"  {cyclical / disturbed:.1%} cyclical jhum  ({cyclical:,.0f} ha)")
+        # "jhum" only where jhum is what this class means. The rule is
+        # district-neutral — disturbed, then recovered within the series —
+        # but the mechanism is not: in Bandarban that is shifting
+        # cultivation, in Sylhet it is far more likely tea replanting or
+        # selective extraction with regrowth, and calling that jhum in a
+        # printout is how a wrong word reaches a caption.
+        label = ("cyclical jhum" if args.district == "bandarban"
+                 else "cyclical disturbance (recovered within the series)")
+        print(f"  {cyclical / disturbed:.1%} {label}  ({cyclical:,.0f} ha)")
         print(f"  {undetermined / disturbed:.1%} undetermined, disturbed after "
               f"{pp.END_YEAR - RECOVERY_WINDOW}  ({undetermined:,.0f} ha)")
 
