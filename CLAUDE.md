@@ -336,6 +336,26 @@ ocite{*}` rather than real
       `pyramidingPolicy={'class': 'mode', ...}`; **the existing asset
       predates that fix**, so anything drawn from it must downsample by
       majority, as `fig_bandarban_jhum_map` does.
+      **LandTrendr extended to all three districts, 2026-09-19.** It had
+      only ever been run for Bandarban; `--district` was always a
+      parameter and had simply never been pointed at the other two. Assets
+      `landtrendr_gazipur` and `landtrendr_sylhet` now exist (both written
+      with the correct `pyramidingPolicy`, unlike the Bandarban one), and
+      `outputs/tables/landtrendr_*_by_year.csv` plus the combined
+      `landtrendr_by_year_all.csv` cover 1988–2024 for all three. Raw
+      pixel sums, so rule 4 still applies — these are not reportable areas.
+
+      Two cautions attached to those new numbers:
+      - **"Cyclical" means jhum only in Bandarban.** The rule is
+        district-neutral (disturbed, then recovered within the series);
+        the mechanism is not. In Sylhet it is far likelier tea replanting
+        or selective extraction. Figures and console output say "disturbed,
+        then recovered" everywhere except Bandarban.
+      - **Gazipur and Sylhet both spike hard in 1998–99**, the two lowland
+        districts, in the year of the 1998 flood. Flood-depressed dry-season
+        NBR is not forest loss and nothing in the pipeline separates the
+        two. Do not quote either district's 1998–99 disturbance as
+        deforestation without addressing this.
 - [x] Phase 8 — **done.** Olofsson adjusted areas, confusion matrices,
       change-detection accuracy, and Cohen's κ for Gazipur and Sylhet.
       Numbers in `outputs/tables/`, written up in Chapter 6 §6.6–6.7
