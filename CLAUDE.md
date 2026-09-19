@@ -204,10 +204,26 @@ signed off on 2026-09-17**. What actually remains:
 3. `outputs/maps/` is still empty (no GeoTIFF was pulled down), but the
    thesis now has its map: `bandarban_jhum_map.png`, rendered from the
    committed `landtrendr_bandarban` asset and placed in ch6 section 6.5.
-4. Dashboard published 2026-09-18:
-   https://ecovision-503602.projects.earthengine.app/view/ecovision
-   It is wired into the site (`LINKS.earthEngineApp`) and is the QR target
-   on both posters. Still to do: put the URL in Chapter 1 and the deck.
+4. **Two things are published, and they are not the same thing.**
+   - The Earth Engine App, 2026-09-18:
+     https://ecovision-503602.projects.earthengine.app/view/ecovision
+     Live GEE compute — the annual trajectory at any pixel you click.
+     This is the QR target on both posters.
+   - The React dashboard, 2026-09-19:
+     https://sheikhsulaiman.github.io/ecovision/
+     Static, built from `ecovision-dashboard/` by
+     `.github/workflows/deploy-dashboard.yml` and served from GitHub
+     Pages (source: GitHub Actions, not a branch, so `dist/` stays
+     ignored). It carries the findings, figures and district map, and
+     links out to the GEE app for anything needing live compute — a
+     static site cannot run Earth Engine for a visitor.
+
+   The workflow is path-filtered to `ecovision-dashboard/**`, so a commit
+   to `src/` or `docs/` does not redeploy. `vite.config.ts` sets
+   `base: "./"`, which is what makes the build work from `/ecovision/`;
+   an absolute base would 404 every asset there.
+
+   Still to do: put both URLs in Chapter 1 and the deck.
 5. The thesis has never been compiled to PDF. The authors compile the
    Overleaf zip themselves; no local LaTeX toolchain is installed and
    none is wanted.
